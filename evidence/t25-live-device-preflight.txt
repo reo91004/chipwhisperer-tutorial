@@ -1,0 +1,18 @@
+date 2026-10-23 Asia/Seoul
+python 3.11.3
+chipwhisperer 7.0.0
+chipwhisperer_path /Users/reo/Documents/Repository/chipwhisperer/software/chipwhisperer/__init__.py
+devices [{'name': 'ChipWhisperer-Lite', 'sn': '50203220594a48303130373132323034', 'hw_loc': (2, 6)}]
+d76a5d321a24fcd7c70bcc316bc06e47eed6ddddec6320f0a2b21dc35ae90ccd  firmware/prebuilt/basic-passwdcheck-CWLITEARM.hex
+README.md:27:각 메인 노트북의 실측 데이터 로딩 셀에 `DATA SOURCE: MEASURED`, run ID, target이 표시됩니다.
+README.md:53:비밀번호 실습은 25 dB를 사용합니다. 정상 연결에서 preflight 파형 폭은 약 608 ADC count였습니다. 한 자릿수 count만 나온다면 공격을 반복하지 말고 target의 `MEASURE` SMA와 shunt 경로부터 확인합니다. 이 장치에서는 35 dB 이상에서 ADC clipping이 발생했습니다.
+README.md:55:`01` 노트북의 `CAPTURE_LIVE_PREVIEW=True`를 켜면 invalid, `h`, `h0px3` 세 입력만 새로 측정합니다. 긴 공격은 저장된 실측 run으로 진행하므로 시연 시간이 늘어나지 않습니다.
+scripts/make_notebooks.py:79:비밀번호 preflight는 25 dB에서 50 ADC count 이상의 폭이 있어야 합니다. TVLA는 fixed/random 각 500개, CPA는 500개 파형을 사용합니다. 아래 값이 다르면 메인 노트북을 열기 전에 원인을 확인하십시오.
+scripts/make_notebooks.py:87:print(f"Password preflight peak-to-peak: {password_span:.1f} ADC counts")
+scripts/make_notebooks.py:108:25 dB 파형 폭이 한 자릿수라면 분석을 시작하지 말고 `MEASURE` SMA와 shunt 경로를 확인합니다. 이 장치에서는 정상 연결 시 약 618 count였습니다.
+scripts/make_notebooks.py:141:print("DATA SOURCE : MEASURED")
+scripts/make_notebooks.py:254:CAPTURE_LIVE_PREVIEW = False
+scripts/make_notebooks.py:256:if CAPTURE_LIVE_PREVIEW:
+scripts/make_notebooks.py:275:    print("Live preview is disabled. Set CAPTURE_LIVE_PREVIEW=True after connecting the board.")
+scripts/make_notebooks.py:346:print("DATA SOURCE : MEASURED")
+scripts/make_notebooks.py:432:print("DATA SOURCE : MEASURED")

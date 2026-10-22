@@ -54,6 +54,8 @@ python scripts/run_hardware_capture.py diagnostic \
 
 `01` 노트북의 `CAPTURE_LIVE_PREVIEW=True`를 켜면 invalid, `h`, `h0px3` 세 입력만 새로 측정합니다. 긴 공격은 저장된 실측 run으로 진행하므로 시연 시간이 늘어나지 않습니다.
 
+이 라이브 미리보기 경로는 2026-10-23에 같은 CW-Lite/F303에서 3/3 캡처, UART 응답, 616-count 파형 폭, clipping 없음으로 확인했습니다.
+
 전체 데이터를 다시 수집하려면 다음 명령을 사용합니다.
 
 ```bash

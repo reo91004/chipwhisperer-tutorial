@@ -5,17 +5,15 @@ import unittest
 import numpy as np
 
 from cw_sca_tutorial.analysis import cpa_correlations, dpa_differences, recover_key_cpa, welch_t_test
-from cw_sca_tutorial.demo import demo_run
+from cw_sca_tutorial.demo import repository_root
 from cw_sca_tutorial.hardware import _trace_output, _trace_wave, validate_waveform
 from cw_sca_tutorial.synthetic import AES_KEY, PASSWORD_ALPHABET, make_aes_dataset, make_tvla_dataset, password_candidate_batch
 
 
 class TutorialAnalysisTests(unittest.TestCase):
-    def test_demo_manifest_points_to_complete_measured_runs(self) -> None:
-        for name in ("password_spa", "aes_tvla", "aes_cpa"):
-            run = demo_run(name)
-            self.assertTrue((run / "metadata.json").is_file())
-            self.assertTrue((run / "traces.npz").is_file())
+    def test_repository_root_finds_prebuilt_firmware(self) -> None:
+        root = repository_root()
+        self.assertTrue((root / "firmware" / "prebuilt" / "basic-passwdcheck-CWLITEARM.hex").is_file())
 
     def test_password_sad_recovers_all_characters(self) -> None:
         prefix = ""

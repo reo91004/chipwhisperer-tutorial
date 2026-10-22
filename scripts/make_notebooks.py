@@ -36,76 +36,72 @@ def main() -> None:
     OUT.mkdir(exist_ok=True)
 
     save(
-        "00_강사용_사전점검.ipynb",
-        "강사용 사전점검",
+        "00_사전점검.ipynb",
+        "사전점검",
         [
             md("""
-# 00. 강사용 사전점검
+# 00. 사전점검
 
-수업 전에만 실행하는 노트북입니다. 학생에게 보여 줄 메인 시연은 01번부터 시작합니다.
-
-저장된 실측 run, 펌웨어, 분석 환경을 먼저 확인합니다. 현재 보드가 없어도 저장 데이터 검사는 모두 실행됩니다. 내일 CW-Lite를 연결한 뒤 첫 셀을 다시 실행하면 USB 인식 상태도 확인할 수 있습니다.
+시연 전에 CW-Lite, target, 펌웨어, 측정 신호를 확인합니다. 이 노트북은 invalid, `h`, `h0px3` 세 입력을 25 dB에서 짧게 측정합니다. 정상 파형이 확인되면 01번부터 차례로 진행합니다.
             """),
             md("""
-## 저장 데이터와 USB 확인
+## 장치와 펌웨어 확인
 
-`data/demo_runs.json`에는 수업에서 사용할 세 개의 실측 run이 고정되어 있습니다. 새 run을 자동으로 고르지 않으므로 수업 도중 결과가 바뀌지 않습니다.
+CW-Lite가 정확히 한 대 연결되어 있어야 합니다. prebuilt 비밀번호 펌웨어의 SHA-256도 함께 출력해 시연에 사용할 입력을 확인합니다.
             """),
             code("""
+import hashlib
 import json
-from pathlib import Path
 
 import chipwhisperer as cw
-import numpy as np
 
-from cw_sca_tutorial.demo import demo_run, repository_root
+from cw_sca_tutorial.demo import repository_root
+from cw_sca_tutorial.hardware import diagnose_password_signal
 
 ROOT = repository_root()
-RUNS = {
-    "password": demo_run("password_spa"),
-    "tvla": demo_run("aes_tvla"),
-    "cpa": demo_run("aes_cpa"),
-}
-
 devices = cw.list_devices()
-print("Connected ChipWhisperer devices:", devices)
-for name, run in RUNS.items():
-    metadata = json.loads((run / "metadata.json").read_text())
-    print(f"{name:8s}  {run.name}  state={metadata['state']}")
+assert len(devices) == 1, f"Expected one ChipWhisperer, found: {devices}"
+
+firmware = ROOT / "firmware/prebuilt/basic-passwdcheck-CWLITEARM.hex"
+firmware_sha256 = hashlib.sha256(firmware.read_bytes()).hexdigest()
+print("Device   :", devices[0])
+print("Firmware :", firmware.name)
+print("SHA-256  :", firmware_sha256)
             """),
             md("""
-## 신호와 데이터 모양 확인
+## 세 입력으로 신호 확인
 
-비밀번호 preflight는 25 dB에서 50 ADC count 이상의 폭이 있어야 합니다. TVLA는 fixed/random 각 500개, CPA는 500개 파형을 사용합니다. 아래 값이 다르면 메인 노트북을 열기 전에 원인을 확인하십시오.
+target 플래시를 지우고 번들 비밀번호 펌웨어를 기록합니다. invalid와 `h`는 `PASSWORD FAIL`, `h0px3`는 `Access granted`를 반환해야 합니다. 25 dB 파형 폭이 50 ADC count보다 작거나 clipping이 있으면 다음 노트북으로 넘어가지 않습니다.
             """),
             code("""
-password_preflight = np.load(RUNS["password"] / "preflight_trace.npy")
-password_span = float(np.ptp(password_preflight))
-tvla = np.load(RUNS["tvla"] / "traces.npz")
-cpa = np.load(RUNS["cpa"] / "traces.npz")
+run = diagnose_password_signal(
+    firmware,
+    gains_db=(25.0,),
+    repeats=1,
+    runs_root=ROOT / "runs",
+    serial_number=devices[0]["sn"],
+    platform_name="CWLITEARM",
+    target_identification="STM32F303",
+)
 
-print(f"Password preflight peak-to-peak: {password_span:.1f} ADC counts")
-print("TVLA shape:", tvla["traces"].shape, "groups:", np.bincount(tvla["groups"]))
-print("CPA shape:", cpa["traces"].shape)
+metadata = json.loads((run / "metadata.json").read_text())
+summary = metadata["gain_summaries"][0]
+print("Run          :", run.name)
+print("UART         :", metadata["uart_validation"])
+print("Peak-to-peak :", summary["median_peak_to_peak"])
+print("ADC range    :", summary["minimum"], summary["maximum"])
 
-assert password_span >= 50
-assert tvla["traces"].shape == (1000, 5000)
-assert np.array_equal(np.bincount(tvla["groups"]), [500, 500])
-assert cpa["traces"].shape == (500, 5000)
+assert metadata["state"] == "complete"
+assert metadata["uart_validation"] == "passed"
+assert metadata["accepted_trace_count"] == 3
+assert summary["median_peak_to_peak"] >= 50
+assert summary["minimum"] > 0 and summary["maximum"] < 1023
 print("Pre-class checks passed.")
             """),
             md("""
-## 내일 보드를 연결한 뒤
+## 점검이 실패하면
 
-터미널에서 다음 진단을 한 번 실행합니다.
-
-```bash
-python scripts/run_hardware_capture.py diagnostic \
-  --platform CWLITEARM \
-  --target-identification STM32F303
-```
-
-25 dB 파형 폭이 한 자릿수라면 분석을 시작하지 말고 `MEASURE` SMA와 shunt 경로를 확인합니다. 이 장치에서는 정상 연결 시 약 618 count였습니다.
+CW-Lite USB, 20-pin cable, target 전원, `MEASURE` SMA와 shunt 경로를 차례로 확인합니다. 이 장치의 정상 파형 폭은 약 600 ADC count였습니다. 35 dB 이상으로 gain을 올려 통과시키지 마십시오. 이전 측정에서는 ADC clipping이 발생했습니다.
             """),
         ],
     )
@@ -119,17 +115,29 @@ python scripts/run_hardware_capture.py diagnostic \
 
 같은 펌웨어에 입력 한 글자만 다르게 넣었습니다. 그런데 실제 전력 파형은 달라집니다. 그 차이만 사용해 교육용 금고의 비밀번호 `h0px3`를 복구해 보겠습니다.
 
-이 노트북은 STM32F303과 ChipWhisperer-Lite에서 직접 측정한 파형 185개를 사용합니다.
+이 노트북을 실행할 때 STM32F303과 ChipWhisperer-Lite에서 후보 185개를 직접 측정합니다. 시작 셀은 target 플래시를 지우고 번들 비밀번호 펌웨어를 기록합니다. 이전 측정에서 약 37초가 걸렸습니다.
             """),
             code("""
+import chipwhisperer as cw
 import json
-
 import matplotlib.pyplot as plt
 import numpy as np
 
-from cw_sca_tutorial.demo import demo_run
+from cw_sca_tutorial.demo import repository_root
+from cw_sca_tutorial.hardware import capture_password_run
 
-run = demo_run("password_spa")
+ROOT = repository_root()
+devices = cw.list_devices()
+assert len(devices) == 1, f"Expected one ChipWhisperer, found: {devices}"
+run = capture_password_run(
+    ROOT / "firmware/prebuilt/basic-passwdcheck-CWLITEARM.hex",
+    repeats=1,
+    gain_db=25.0,
+    runs_root=ROOT / "runs",
+    serial_number=devices[0]["sn"],
+    platform_name="CWLITEARM",
+    target_identification="STM32F303",
+)
 metadata = json.loads((run / "metadata.json").read_text())
 data = np.load(run / "traces.npz")
 
@@ -245,35 +253,6 @@ ax.set(title="Measured password candidate scores", xlabel="Candidate")
 fig.colorbar(image, ax=ax, label="SAD")
 plt.show()
             """),
-            md("""
-## 수업 중 짧은 라이브 캡처
-
-아래 값을 `True`로 바꾸면 내일 연결한 보드에서 invalid, `h`, `h0px3` 세 입력을 실제로 다시 측정합니다. 이 과정은 target 플래시를 지우고 번들 비밀번호 펌웨어를 기록합니다. 전체 공격은 위의 저장된 실측 데이터로 진행하므로 수업 시간이 길어지지 않습니다.
-            """),
-            code("""
-CAPTURE_LIVE_PREVIEW = False
-
-if CAPTURE_LIVE_PREVIEW:
-    import chipwhisperer as cw
-    from cw_sca_tutorial.demo import repository_root
-    from cw_sca_tutorial.hardware import diagnose_password_signal
-
-    devices = cw.list_devices()
-    assert len(devices) == 1, f"Expected one ChipWhisperer, found: {devices}"
-    root = repository_root()
-    preview_run = diagnose_password_signal(
-        root / "firmware/prebuilt/basic-passwdcheck-CWLITEARM.hex",
-        gains_db=(25.0,),
-        repeats=1,
-        runs_root=root / "runs",
-        serial_number=devices[0]["sn"],
-        platform_name="CWLITEARM",
-        target_identification="STM32F303",
-    )
-    print("New live preview:", preview_run)
-else:
-    print("Live preview is disabled. Set CAPTURE_LIVE_PREVIEW=True after connecting the board.")
-            """),
         ],
     )
 
@@ -284,7 +263,7 @@ else:
             md("""
 # 02. 비트 변화가 전력으로 보이는 이유
 
-01번에서는 파형 차이로 비밀번호를 찾았습니다. 이제 MCU 내부 값과 전력 소비를 연결하는 Hamming weight와 Hamming distance를 살펴보고, 실제 TVLA로 누설 위치를 찾겠습니다.
+01번에서는 파형 차이로 비밀번호를 찾았습니다. 이제 MCU 내부 값과 전력 소비를 연결하는 Hamming weight와 Hamming distance를 살펴보고, 실제 TVLA로 누설 위치를 찾겠습니다. 실측 셀은 target 플래시를 지우고 번들 TinyAES 펌웨어를 기록합니다.
             """),
             md("""
 ## Hamming weight
@@ -296,7 +275,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from cw_sca_tutorial.analysis import welch_t_test
-from cw_sca_tutorial.demo import demo_run
 
 value = 0x3A
 bits = np.array([(value >> bit) & 1 for bit in range(7, -1, -1)])
@@ -330,12 +308,27 @@ print("Hamming distance =", distance)
             md("""
 ## 실제 fixed-vs-random 데이터
 
-AES 키는 고정한 채 평문이 항상 같은 그룹 500개와 매번 달라지는 그룹 500개를 측정했습니다. 두 그룹은 시간 순서에 따른 드리프트가 한쪽에 몰리지 않도록 섞어서 수집했습니다.
+AES 키는 고정한 채 평문이 항상 같은 그룹 100개와 매번 달라지는 그룹 100개를 지금 측정합니다. 두 그룹은 시간 순서에 따른 드리프트가 한쪽에 몰리지 않도록 섞어서 수집합니다. 이전 측정에서는 약 10–15초가 걸릴 것으로 예상됩니다.
             """),
             code("""
+import chipwhisperer as cw
 import json
 
-run = demo_run("aes_tvla")
+from cw_sca_tutorial.demo import repository_root
+from cw_sca_tutorial.hardware import capture_aes_run
+
+ROOT = repository_root()
+devices = cw.list_devices()
+assert len(devices) == 1, f"Expected one ChipWhisperer, found: {devices}"
+run = capture_aes_run(
+    ROOT / "firmware/prebuilt/simpleserial-aes-CWLITEARM.hex",
+    trace_count=200,
+    runs_root=ROOT / "runs",
+    serial_number=devices[0]["sn"],
+    platform_name="CWLITEARM",
+    target_identification="STM32F303",
+    capture_mode="fixed_vs_random",
+)
 metadata = json.loads((run / "metadata.json").read_text())
 data = np.load(run / "traces.npz")
 traces = data["traces"]
@@ -380,7 +373,7 @@ assert np.max(np.abs(t_values)) > threshold
 각 그룹에서 사용하는 파형 수를 늘리며 최대 `|t|`를 다시 계산합니다. TVLA는 누설 위치를 찾는 검사이며, 이 단계에서는 아직 키 후보를 사용하지 않습니다.
             """),
             code("""
-counts = [25, 50, 100, 200, 300, 500]
+counts = [10, 25, 50, 75, 100]
 max_t = []
 for count in counts:
     subset = np.concatenate([
@@ -407,22 +400,33 @@ plt.show()
             md("""
 # 03. 실제 파형으로 AES 키 복구하기
 
-TVLA에서는 누설 위치만 확인했습니다. 이제 알려진 평문과 키 후보로 AES 첫 라운드 중간값을 예측하고, 실제 파형 500개에서 16바이트 키를 복구합니다.
+TVLA에서는 누설 위치만 확인했습니다. 이제 알려진 평문과 키 후보로 AES 첫 라운드 중간값을 예측하고, 새로 측정한 파형 100개에서 16바이트 키를 복구합니다. 시작 셀은 target 플래시를 지우고 번들 TinyAES 펌웨어를 기록합니다. 이전 측정에서는 약 10초가 걸렸습니다.
 
 $$Z = SBox[P \oplus K]$$
 
 공격자는 평문 `P`를 알고 있습니다. 키 후보 `K`를 하나씩 넣으면 중간값 `Z`를 예측할 수 있습니다.
             """),
             code("""
+import chipwhisperer as cw
 import json
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 from cw_sca_tutorial.analysis import cpa_correlations, dpa_differences, recover_key_cpa
-from cw_sca_tutorial.demo import demo_run
+from cw_sca_tutorial.demo import repository_root
+from cw_sca_tutorial.hardware import capture_aes_run
 
-run = demo_run("aes_cpa")
+ROOT = repository_root()
+devices = cw.list_devices()
+assert len(devices) == 1, f"Expected one ChipWhisperer, found: {devices}"
+run = capture_aes_run(
+    ROOT / "firmware/prebuilt/simpleserial-aes-CWLITEARM.hex",
+    trace_count=100,
+    runs_root=ROOT / "runs",
+    serial_number=devices[0]["sn"],
+    platform_name="CWLITEARM",
+    target_identification="STM32F303",
+)
 metadata = json.loads((run / "metadata.json").read_text())
 data = np.load(run / "traces.npz")
 traces = data["traces"]
@@ -526,7 +530,7 @@ print(f"Maximum correlation: {cpa_scores[cpa_best]:.4f}")
 25개부터 500개까지 파형 수를 늘리며 첫 바이트 정답의 순위를 계산합니다. 파형이 늘어나면 가장 강한 오답의 상관은 낮아지고 정답 후보가 안정적으로 분리됩니다.
             """),
             code("""
-counts = [25, 50, 100, 200, 300, 500]
+counts = [25, 50, 75, 100]
 true_scores, wrong_scores, ranks = [], [], []
 for count in counts:
     corr = cpa_correlations(traces[:count], plaintexts[:count], byte_index=0)

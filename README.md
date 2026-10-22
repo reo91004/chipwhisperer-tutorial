@@ -1,30 +1,19 @@
 # ChipWhisperer 실측 부채널 분석 시연
 
-STM32F303과 ChipWhisperer-Lite에서 직접 측정한 전력 파형으로 비밀번호 SPA, fixed-vs-random TVLA, AES DPA·CPA를 빠르게 시연하는 Jupyter 튜토리얼입니다. 메인 노트북은 합성 데이터로 자동 대체하지 않습니다.
+STM32F303과 ChipWhisperer-Lite에서 매번 새로 측정한 전력 파형으로 비밀번호 SPA, fixed-vs-random TVLA, AES DPA·CPA를 시연하는 Jupyter 튜토리얼입니다. 메인 노트북은 합성 데이터나 이전 run으로 자동 대체하지 않습니다.
 
 ## 수업 순서
 
-`00`은 강사용 점검입니다. 학생 시연은 `01`부터 시작합니다.
+| 순서 | 노트북 | 새로 측정하는 데이터 | 예상 시간 |
+|---:|---|---:|---:|
+| 준비 | `00_사전점검.ipynb` | invalid, `h`, `h0px3` 3개 | 약 6초 |
+| 1 | `01_전력으로_비밀번호_깨기.ipynb` | 비밀번호 후보 185개 | 약 37초 |
+| 2 | `02_비트에서_TVLA까지.ipynb` | fixed 100개 + random 100개 | 약 10–15초 |
+| 3 | `03_AES_키_복구.ipynb` | 무작위 평문 100개 | 약 10초 |
 
-| 순서 | 노트북 | 시연 내용 | 권장 시간 |
-|---:|---|---|---:|
-| 준비 | `00_강사용_사전점검.ipynb` | 저장 run, USB, 신호 폭 확인 | 수업 전 |
-| 1 | `01_전력으로_비밀번호_깨기.ipynb` | 실제 파형으로 `h0px3` 복구 | 10분 |
-| 2 | `02_비트에서_TVLA까지.ipynb` | HW·HD와 실측 fixed-vs-random TVLA | 10분 |
-| 3 | `03_AES_키_복구.ipynb` | 실측 DPA 한 바이트와 CPA 16바이트 복구 | 15분 |
+펌웨어 프로그래밍을 포함한 전체 캡처 시간은 약 1분입니다. 각 노트북은 자신이 만든 run을 즉시 분석합니다.
 
 기존 합성 예제는 `notebooks/appendix/`에 남겼습니다. 장비 없이 원리를 복습하거나 과제로 사용할 때만 열면 됩니다.
-
-## 확인된 실측 결과
-
-메인 노트북은 [data/demo_runs.json](data/demo_runs.json)에 고정한 다음 run을 읽습니다.
-
-- 비밀번호 SPA: 185개 파형으로 `h0px3` 복구
-- TVLA: fixed 500개와 random 500개, 최대 `|t|=72.80`, 비교용 0:50 창은 3.79
-- TinyAES CPA: 500개 파형으로 `2b7e151628aed2a6abf7158809cf4f3c` 16바이트 복구
-- TinyAES DPA: 첫 바이트 `0x2b`가 256개 후보 중 1위
-
-각 메인 노트북의 실측 데이터 로딩 셀에 `DATA SOURCE: MEASURED`, run ID, target이 표시됩니다.
 
 ## 설치
 
@@ -40,48 +29,61 @@ jupyter lab
 
 검증 환경은 Python 3.11.3, ChipWhisperer 7.0.0, NumPy 2.4.3입니다.
 
-## 내일 보드를 연결한 뒤
+## 연결과 gain
 
-먼저 강사용 `00` 노트북과 짧은 진단을 실행합니다.
+권장 target은 STM32F303이며 플랫폼 이름은 `CWLITEARM`입니다.
 
-```bash
-python scripts/run_hardware_capture.py diagnostic \
-  --platform CWLITEARM \
-  --target-identification STM32F303
-```
+- CW-Lite USB와 target 전원을 확인합니다.
+- 20-pin cable과 `MEASURE` SMA를 확인합니다.
+- 외부 전원과 CW 전원이 충돌하지 않게 합니다.
+- 기본 외부 clock은 약 7.37 MHz, ADC는 약 29.5 MHz입니다.
+- 비밀번호 실습은 25 dB를 사용합니다.
 
-비밀번호 실습은 25 dB를 사용합니다. 정상 연결에서 preflight 파형 폭은 약 608 ADC count였습니다. 한 자릿수 count만 나온다면 공격을 반복하지 말고 target의 `MEASURE` SMA와 shunt 경로부터 확인합니다. 이 장치에서는 35 dB 이상에서 ADC clipping이 발생했습니다.
+정상 연결에서 비밀번호 진단 파형 폭은 약 600 ADC count였습니다. 한 자릿수 count만 나온다면 다음 노트북으로 넘어가지 말고 `MEASURE` SMA와 shunt 경로를 확인합니다. 이 장치에서는 35 dB 이상에서 ADC clipping이 발생했습니다.
 
-`01` 노트북의 `CAPTURE_LIVE_PREVIEW=True`를 켜면 invalid, `h`, `h0px3` 세 입력만 새로 측정합니다. 긴 공격은 저장된 실측 run으로 진행하므로 시연 시간이 늘어나지 않습니다.
+## 노트북이 수행하는 작업
 
-이 라이브 미리보기 경로는 2026-10-23에 같은 CW-Lite/F303에서 3/3 캡처, UART 응답, 616-count 파형 폭, clipping 없음으로 확인했습니다.
+### 00 사전점검
 
-전체 데이터를 다시 수집하려면 다음 명령을 사용합니다.
+target 플래시를 지우고 번들 비밀번호 펌웨어를 기록합니다. invalid, `h`, `h0px3`의 UART 응답과 파형 폭, clipping을 확인합니다.
 
-```bash
-./scripts/build_firmware.sh
-python scripts/run_hardware_capture.py password --platform CWLITEARM --target-identification STM32F303
-python scripts/run_hardware_capture.py tvla --platform CWLITEARM --target-identification STM32F303 --tvla-traces 1000
-python scripts/run_hardware_capture.py aes --platform CWLITEARM --target-identification STM32F303 --aes-traces 500
-```
+### 01 비밀번호 SPA
 
-캡처 명령은 target 플래시를 지우고 번들 교육용 펌웨어를 기록합니다. 연결된 교육용 target에서만 실행하십시오.
+비밀번호 펌웨어를 다시 기록하고 36개 후보를 위치마다 한 번씩 측정합니다. 전체 3,000샘플 SAD를 원시 파형에서 계산해 `h0px3`를 복구합니다.
+
+### 02 HW·HD와 TVLA
+
+TinyAES 펌웨어를 기록한 뒤 fixed 100개와 random 100개를 섞어서 측정합니다. 샘플별 Welch t-test와 `±4.5` 기준선을 표시합니다.
+
+### 03 DPA·CPA
+
+TinyAES 펌웨어를 기록하고 무작위 평문 100개의 파형을 측정합니다. bit-3 DPA로 첫 바이트를 찾고 CPA로 AES-128 키 16바이트를 복구합니다.
+
+## run 기록
+
+새 물리 실행은 `runs/<UTC시각>-<실험명>/`에 저장됩니다.
+
+- `metadata.json`: 장치, firmware hash, clock, trigger, 완료 상태
+- `attempts.jsonl`: programming과 캡처 시도
+- `preflight_trace.npy`: 알려진 입력의 점검 파형
+- `traces.npz`: 완료 run의 원시 파형과 입력·응답·그룹
+
+자동 재시도는 하지 않습니다. 실패한 run은 `state=failed`로 남고 분석에 사용하지 않습니다.
 
 ## 저장소 구성
 
 ```text
-data/demo_runs.json       수업에 고정한 실측 run 목록
-notebooks/                강사용 00과 학생용 01–03
-notebooks/appendix/       장비 없이 실행하는 합성 예제 부록
-src/cw_sca_tutorial/      DPA·CPA·TVLA와 하드웨어 캡처 코드
+notebooks/                라이브 실측 00–03
+notebooks/appendix/       장비 없이 실행하는 합성 예제
+src/cw_sca_tutorial/      TVLA·DPA·CPA와 하드웨어 캡처 코드
 firmware/mcu/             독립 빌드용 F303/F415 펌웨어 소스
 firmware/prebuilt/        검증한 HEX와 SHA-256
-runs/                     물리 run의 파형·입력·설정·시도 기록
+runs/                     시연 때 생성되는 새 물리 run
 tests/                    분석 로직과 품질 게이트 검사
-evidence/                 빌드·노트북 실행·독립 검토 기록
+evidence/                 개발·검증 기록
 ```
 
-실측 근거와 초기 연결 실패의 원인 분석은 [evidence/t17-hardware-results.md](evidence/t17-hardware-results.md)에 있습니다.
+기존 개발 run은 사용자 요청으로 삭제했습니다. 필요하면 Git 커밋 `562e223`에서 복구할 수 있습니다.
 
 ## 윤리와 라이선스
 

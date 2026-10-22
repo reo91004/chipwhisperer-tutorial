@@ -1,9 +1,0 @@
-{
-  "status": "rejected_for_password_recovery",
-  "method": "maximum 25-sample local SAD from the across-candidate median waveform",
-  "result": "y4bab",
-  "expected_bundled_password": "h0px3",
-  "interpretation": "The acquisition completed, but the frozen method failed on fresh data and is rejected.",
-  "observed_confounder": "Candidates were captured in contiguous blocks, and candidate means contain slow amplitude/offset drift that can be mistaken for a character effect.",
-  "next_discriminating_check": "Randomize candidate order within each repeat, normalize each trace offset and scale, calibrate only on the disclosed first character, then validate any frozen method on another fresh run."
-}

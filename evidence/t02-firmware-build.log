@@ -1,0 +1,2 @@
+SS_VER set to SS_VER_1_0
+.././hal/Makefile.hal:321: *** Missing fw-extra submodule. See https://github.com/newaetech/chipwhisperer-fw-extra.  Stop.

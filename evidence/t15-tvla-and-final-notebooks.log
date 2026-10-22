@@ -1,0 +1,101 @@
+[NbConvertApp] Converting notebook notebooks/00_파형과_트리거.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 677441 bytes to notebooks/00_파형과_트리거.ipynb
+[NbConvertApp] Converting notebook notebooks/01_타이밍_SPA_비밀번호.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 200558 bytes to notebooks/01_타이밍_SPA_비밀번호.ipynb
+[NbConvertApp] Converting notebook notebooks/02_TVLA_누설_검정.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 598736 bytes to notebooks/02_TVLA_누설_검정.ipynb
+[NbConvertApp] Converting notebook notebooks/03_DPA_AES_한바이트.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 693947 bytes to notebooks/03_DPA_AES_한바이트.ipynb
+[NbConvertApp] Converting notebook notebooks/04_CPA_AES_전체키.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 553572 bytes to notebooks/04_CPA_AES_전체키.ipynb
+[NbConvertApp] Converting notebook notebooks/05_CWLITE_F303_실측.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+Traceback (most recent call last):
+  File "/Users/reo/.pyenv/versions/pacl/bin/jupyter-nbconvert", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/jupyter_core/application.py", line 284, in launch_instance
+    super().launch_instance(argv=argv, **kwargs)
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/traitlets/config/application.py", line 1080, in launch_instance
+    app.start()
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/nbconvertapp.py", line 420, in start
+    self.convert_notebooks()
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/nbconvertapp.py", line 597, in convert_notebooks
+    self.convert_single_notebook(notebook_filename)
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/nbconvertapp.py", line 563, in convert_single_notebook
+    output, resources = self.export_single_notebook(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/nbconvertapp.py", line 487, in export_single_notebook
+    output, resources = self.exporter.from_filename(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/exporters/exporter.py", line 201, in from_filename
+    return self.from_file(f, resources=resources, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/exporters/exporter.py", line 220, in from_file
+    return self.from_notebook_node(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/exporters/notebook.py", line 36, in from_notebook_node
+    nb_copy, resources = super().from_notebook_node(nb, resources, **kw)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/exporters/exporter.py", line 154, in from_notebook_node
+    nb_copy, resources = self._preprocess(nb_copy, resources)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/exporters/exporter.py", line 353, in _preprocess
+    nbc, resc = preprocessor(nbc, resc)
+                ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/preprocessors/base.py", line 48, in __call__
+    return self.preprocess(nb, resources)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/preprocessors/execute.py", line 103, in preprocess
+    self.preprocess_cell(cell, resources, index)
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbconvert/preprocessors/execute.py", line 124, in preprocess_cell
+    cell = self.execute_cell(cell, index, store_history=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+    return loop.run_until_complete(inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/3.11.3/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/Users/reo/.pyenv/versions/pacl/lib/python3.11/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+tvla_meta = json.loads((tvla_run / "metadata.json").read_text())
+tvla_data = np.load(tvla_run / "traces.npz")
+assert tvla_meta["state"] == "complete"
+tvla_traces = tvla_data["traces"]
+tvla_groups = tvla_data["groups"]
+fixed = tvla_traces[tvla_groups == 0]
+random = tvla_traces[tvla_groups == 1]
+t_values = welch_t_test(tvla_traces, tvla_groups)
+peak = int(np.argmax(np.abs(t_values)))
+print(f"fixed={len(fixed)}, random={len(random)}")
+print(f"maximum |t|={abs(t_values[peak]):.2f} at sample {peak}")
+print(f"wrong-window maximum |t|={np.max(np.abs(t_values[:50])):.2f}")
+assert np.max(np.abs(t_values)) > 4.5
+assert np.max(np.abs(t_values[:50])) < 4.5
+------------------
+
+
+[31m---------------------------------------------------------------------------[39m
+[31mNameError[39m                                 Traceback (most recent call last)
+[36mCell[39m[36m [39m[32mIn[4][39m[32m, line 8[39m
+[32m      4[39m tvla_traces = tvla_data[[33m"traces"[39m]
+[32m      5[39m tvla_groups = tvla_data[[33m"groups"[39m]
+[32m      6[39m fixed = tvla_traces[tvla_groups == [32m0[39m]
+[32m      7[39m random = tvla_traces[tvla_groups == [32m1[39m]
+[32m----> [39m[32m8[39m t_values = welch_t_test(tvla_traces, tvla_groups)
+[32m      9[39m peak = int(np.argmax(np.abs(t_values)))
+[32m     10[39m print([33mf"fixed={len(fixed)}, random={len(random)}"[39m)
+[32m     11[39m print([33mf"maximum |t|={abs(t_values[peak]):.2f} at sample {peak}"[39m)
+
+[31mNameError[39m: name 'welch_t_test' is not defined
+

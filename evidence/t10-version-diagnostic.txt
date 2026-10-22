@@ -1,0 +1,9 @@
+python 3.11.3
+chipwhisperer 7.0.0
+chipwhisperer_path /Users/reo/Documents/Repository/chipwhisperer/software/chipwhisperer/__init__.py
+devices [{'name': 'ChipWhisperer-Lite', 'sn': '50203220594a48303130373132323034', 'hw_loc': (0, 5)}]
+scope_class OpenADC
+scope_sn 50203220594a48303130373132323034
+scope_firmware [0, 65, 0]
+scope_firmware_up_to_date True
+scope_hw_type cwlite

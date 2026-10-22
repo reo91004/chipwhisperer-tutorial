@@ -1,0 +1,10 @@
+Date: 2026-10-22 (Asia/Seoul)
+Upstream repository: /Users/reo/Documents/Repository/chipwhisperer
+Upstream commit: c47aefe0d3083b5fc7392ab0698aa7446c633dd4
+ChipWhisperer package: 7.0.0, imported from the upstream checkout
+Python: 3.11.3
+Detected capture device: ChipWhisperer-Lite, serial 50203220313038543130313231303037, USB location (0, 5)
+Detected serial endpoint: /dev/cu.usbmodem13102
+ARM GCC preflight: arm-none-eabi-gcc was not found on PATH
+
+This is diagnostic environment evidence only. No target programming, trigger arming, reset, or trace capture was performed.

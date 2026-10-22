@@ -1,0 +1,171 @@
+SS_VER set to SS_VER_1_0
+SS_VER set to SS_VER_1_0
+.
+Welcome to another exciting ChipWhisperer target build!!
+arm-none-eabi-gcc (Arm GNU Toolchain 14.3.Rel1 (Build arm-14.174)) 14.3.1 20250623
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+mkdir -p objdir-CW308_STM32F4 
+.
+Compiling:
+-en     basic-passwdcheck.c ...
+-e Done!
+.
+Compiling:
+-en     .././simpleserial/simpleserial.c ...
+.././simpleserial/simpleserial.c: In function 'simpleserial_get':
+.././simpleserial/simpleserial.c:419:17: warning: variable 'ret' set but not used [-Wunused-but-set-variable]
+  419 |         uint8_t ret[1];
+      |                 ^~~
+-e Done!
+.
+Compiling:
+-en     .././hal/hal.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_hal.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_hal_lowlevel.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_sysmem.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4xx_hal_rng.c ...
+-e Done!
+.
+Assembling: .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_startup.S
+arm-none-eabi-gcc -c -mcpu=cortex-m4 -I. -x assembler-with-cpp -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections -DF_CPU=7372800 -Wa,-gstabs,-adhlns=objdir-CW308_STM32F4/stm32f4_startup.lst -I.././simpleserial/ -I.././hal/chipwhisperer-fw-extra -I.././hal/ -I.././hal/chipwhisperer-fw-extra/stm32f4 -I.././hal/chipwhisperer-fw-extra/stm32f4/CMSIS -I.././hal/chipwhisperer-fw-extra/stm32f4/CMSIS/core -I.././hal/chipwhisperer-fw-extra/stm32f4/CMSIS/device -I.././hal/chipwhisperer-fw-extra/stm32f4/Legacy -I.././simpleserial/ -I.././crypto/ .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_startup.S -o objdir-CW308_STM32F4/stm32f4_startup.o
+.
+LINKING:
+-en     basic-passwdcheck-CW308_STM32F4.elf ...
+/Users/reo/.local/opt/arm-gnu-toolchain-14.3.rel1-darwin-arm64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/bin/ld: warning: basic-passwdcheck-CW308_STM32F4.elf has a LOAD segment with RWX permissions
+Memory region         Used Size  Region Size  %age Used
+             RAM:        1624 B       128 KB      1.24%
+             ROM:        4020 B         1 MB      0.38%
+-e Done!
+.
+Creating load file for Flash: basic-passwdcheck-CW308_STM32F4.hex
+arm-none-eabi-objcopy -O ihex -R .eeprom -R .fuse -R .lock -R .signature basic-passwdcheck-CW308_STM32F4.elf basic-passwdcheck-CW308_STM32F4.hex
+.
+Creating load file for Flash: basic-passwdcheck-CW308_STM32F4.bin
+arm-none-eabi-objcopy -O binary -R .eeprom -R .fuse -R .lock -R .signature basic-passwdcheck-CW308_STM32F4.elf basic-passwdcheck-CW308_STM32F4.bin
+.
+Creating load file for EEPROM: basic-passwdcheck-CW308_STM32F4.eep
+arm-none-eabi-objcopy -j .eeprom --set-section-flags=.eeprom="alloc,load" \
+	--change-section-lma .eeprom=0 --no-change-warnings -O ihex basic-passwdcheck-CW308_STM32F4.elf basic-passwdcheck-CW308_STM32F4.eep || exit 0
+.
+Creating Extended Listing: basic-passwdcheck-CW308_STM32F4.lss
+arm-none-eabi-objdump -h -S -z basic-passwdcheck-CW308_STM32F4.elf > basic-passwdcheck-CW308_STM32F4.lss
+.
+Creating Symbol Table: basic-passwdcheck-CW308_STM32F4.sym
+arm-none-eabi-nm -n basic-passwdcheck-CW308_STM32F4.elf > basic-passwdcheck-CW308_STM32F4.sym
+Size after:
+   text	   data	    bss	    dec	    hex	filename
+   4004	     16	   1620	   5640	   1608	basic-passwdcheck-CW308_STM32F4.elf
++--------------------------------------------------------
++ Default target does full rebuild each time.
++ Specify buildtarget == allquick == to avoid full rebuild
++--------------------------------------------------------
++--------------------------------------------------------
++ Built for platform CW308T: STM32F4 Target with:
++ CRYPTO_TARGET = NONE
++ CRYPTO_OPTIONS = AES128C
++--------------------------------------------------------
+Building for platform CW308_STM32F4 with CRYPTO_TARGET=TINYAES128C
+SS_VER set to SS_VER_1_1
+SS_VER set to SS_VER_1_1
+Blank crypto options, building for AES128
+.
+Welcome to another exciting ChipWhisperer target build!!
+arm-none-eabi-gcc (Arm GNU Toolchain 14.3.Rel1 (Build arm-14.174)) 14.3.1 20250623
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+mkdir -p objdir-CW308_STM32F4 
+.
+Compiling:
+-en     simpleserial-aes.c ...
+-e Done!
+.
+Compiling:
+-en     .././simpleserial/simpleserial.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/hal.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_hal.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_hal_lowlevel.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_sysmem.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4xx_hal_rng.c ...
+-e Done!
+.
+Compiling:
+-en     .././crypto/tiny-AES128-C/aes.c ...
+-e Done!
+.
+Compiling:
+-en     .././crypto/aes-independant.c ...
+-e Done!
+.
+Assembling: .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_startup.S
+arm-none-eabi-gcc -c -mcpu=cortex-m4 -I. -x assembler-with-cpp -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections -DF_CPU=7372800 -Wa,-gstabs,-adhlns=objdir-CW308_STM32F4/stm32f4_startup.lst -I.././simpleserial/ -I.././hal/chipwhisperer-fw-extra -I.././hal/ -I.././hal/chipwhisperer-fw-extra/stm32f4 -I.././hal/chipwhisperer-fw-extra/stm32f4/CMSIS -I.././hal/chipwhisperer-fw-extra/stm32f4/CMSIS/core -I.././hal/chipwhisperer-fw-extra/stm32f4/CMSIS/device -I.././hal/chipwhisperer-fw-extra/stm32f4/Legacy -I.././simpleserial/ -I.././crypto/ -I.././crypto/tiny-AES128-C .././hal/chipwhisperer-fw-extra/stm32f4/stm32f4_startup.S -o objdir-CW308_STM32F4/stm32f4_startup.o
+.
+LINKING:
+-en     simpleserial-aes-CW308_STM32F4.elf ...
+/Users/reo/.local/opt/arm-gnu-toolchain-14.3.rel1-darwin-arm64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/bin/ld: warning: simpleserial-aes-CW308_STM32F4.elf has a LOAD segment with RWX permissions
+Memory region         Used Size  Region Size  %age Used
+             RAM:        2872 B       128 KB      2.19%
+             ROM:        5564 B         1 MB      0.53%
+-e Done!
+.
+Creating load file for Flash: simpleserial-aes-CW308_STM32F4.hex
+arm-none-eabi-objcopy -O ihex -R .eeprom -R .fuse -R .lock -R .signature simpleserial-aes-CW308_STM32F4.elf simpleserial-aes-CW308_STM32F4.hex
+.
+Creating load file for Flash: simpleserial-aes-CW308_STM32F4.bin
+arm-none-eabi-objcopy -O binary -R .eeprom -R .fuse -R .lock -R .signature simpleserial-aes-CW308_STM32F4.elf simpleserial-aes-CW308_STM32F4.bin
+.
+Creating load file for EEPROM: simpleserial-aes-CW308_STM32F4.eep
+arm-none-eabi-objcopy -j .eeprom --set-section-flags=.eeprom="alloc,load" \
+	--change-section-lma .eeprom=0 --no-change-warnings -O ihex simpleserial-aes-CW308_STM32F4.elf simpleserial-aes-CW308_STM32F4.eep || exit 0
+.
+Creating Extended Listing: simpleserial-aes-CW308_STM32F4.lss
+arm-none-eabi-objdump -h -S -z simpleserial-aes-CW308_STM32F4.elf > simpleserial-aes-CW308_STM32F4.lss
+.
+Creating Symbol Table: simpleserial-aes-CW308_STM32F4.sym
+arm-none-eabi-nm -n simpleserial-aes-CW308_STM32F4.elf > simpleserial-aes-CW308_STM32F4.sym
+Size after:
+   text	   data	    bss	    dec	    hex	filename
+   5020	    544	   2340	   7904	   1ee0	simpleserial-aes-CW308_STM32F4.elf
++--------------------------------------------------------
++ Default target does full rebuild each time.
++ Specify buildtarget == allquick == to avoid full rebuild
++--------------------------------------------------------
++--------------------------------------------------------
++ Built for platform CW308T: STM32F4 Target with:
++ CRYPTO_TARGET = TINYAES128C
++ CRYPTO_OPTIONS = AES128C
++--------------------------------------------------------
+arm-none-eabi-gcc (Arm GNU Toolchain 14.3.Rel1 (Build arm-14.174)) 14.3.1 20250623
+55a6f5ef24868d567a0c9353981251d2db58ac19e03c4c2916020d89a9b587b6  basic-passwdcheck-CW308_STM32F4.hex
+d4c19f11a11f0c0f66c484af069901b5ee73f404957d661e611b4f844f80c5b0  simpleserial-aes-CW308_STM32F4.hex

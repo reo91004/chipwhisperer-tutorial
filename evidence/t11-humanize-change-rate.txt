@@ -1,0 +1,6 @@
+generated 5 notebooks in /Users/reo/Documents/Repository/chipwhisperer-tutorial/notebooks
+00_파형과_트리거.ipynb before 556 after 516 change_rate_percent 43.8
+01_타이밍_SPA_비밀번호.ipynb before 560 after 569 change_rate_percent 46.5
+02_DPA_AES_한바이트.ipynb before 433 after 384 change_rate_percent 47.9
+03_CPA_AES_전체키.ipynb before 527 after 525 change_rate_percent 44.3
+04_CWLITE_F303_실측.ipynb before 806 after 722 change_rate_percent 51.4

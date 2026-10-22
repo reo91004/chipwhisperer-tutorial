@@ -1,0 +1,77 @@
+SS_VER set to SS_VER_1_0
+SS_VER set to SS_VER_1_0
+.
+Welcome to another exciting ChipWhisperer target build!!
+arm-none-eabi-gcc (Arm GNU Toolchain 14.3.Rel1 (Build arm-14.174)) 14.3.1 20250623
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+mkdir -p objdir-CW308_STM32F3 
+.
+Compiling:
+-en     basic-passwdcheck.c ...
+-e Done!
+.
+Compiling:
+-en     .././simpleserial/simpleserial.c ...
+.././simpleserial/simpleserial.c: In function 'simpleserial_get':
+.././simpleserial/simpleserial.c:419:17: warning: variable 'ret' set but not used [-Wunused-but-set-variable]
+  419 |         uint8_t ret[1];
+      |                 ^~~
+-e Done!
+.
+Compiling:
+-en     .././hal/hal.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal//stm32f3/stm32f3_hal.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal//stm32f3/stm32f3_hal_lowlevel.c ...
+-e Done!
+.
+Compiling:
+-en     .././hal//stm32f3/stm32f3_sysmem.c ...
+-e Done!
+.
+Assembling: .././hal//stm32f3/stm32f3_startup.S
+arm-none-eabi-gcc -c -mcpu=cortex-m4 -I. -x assembler-with-cpp -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections -DF_CPU=7372800 -Wa,-gstabs,-adhlns=objdir-CW308_STM32F3/stm32f3_startup.lst -I.././simpleserial/ -I.././hal/ -I.././hal/ -I.././hal//stm32f3 -I.././hal//stm32f3/CMSIS -I.././hal//stm32f3/CMSIS/core -I.././hal//stm32f3/CMSIS/device -I.././hal//stm32f4/Legacy -I.././simpleserial/ -I.././crypto/ .././hal//stm32f3/stm32f3_startup.S -o objdir-CW308_STM32F3/stm32f3_startup.o
+.
+LINKING:
+-en     basic-passwdcheck-CW308_STM32F3.elf ...
+/Users/reo/.local/opt/arm-gnu-toolchain-14.3.rel1-darwin-arm64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/bin/ld: warning: basic-passwdcheck-CW308_STM32F3.elf has a LOAD segment with RWX permissions
+Memory region         Used Size  Region Size  %age Used
+             RAM:        1176 B        40 KB      2.87%
+             ROM:        4536 B       256 KB      1.73%
+-e Done!
+.
+Creating load file for Flash: basic-passwdcheck-CW308_STM32F3.hex
+arm-none-eabi-objcopy -O ihex -R .eeprom -R .fuse -R .lock -R .signature basic-passwdcheck-CW308_STM32F3.elf basic-passwdcheck-CW308_STM32F3.hex
+.
+Creating load file for Flash: basic-passwdcheck-CW308_STM32F3.bin
+arm-none-eabi-objcopy -O binary -R .eeprom -R .fuse -R .lock -R .signature basic-passwdcheck-CW308_STM32F3.elf basic-passwdcheck-CW308_STM32F3.bin
+.
+Creating load file for EEPROM: basic-passwdcheck-CW308_STM32F3.eep
+arm-none-eabi-objcopy -j .eeprom --set-section-flags=.eeprom="alloc,load" \
+	--change-section-lma .eeprom=0 --no-change-warnings -O ihex basic-passwdcheck-CW308_STM32F3.elf basic-passwdcheck-CW308_STM32F3.eep || exit 0
+.
+Creating Extended Listing: basic-passwdcheck-CW308_STM32F3.lss
+arm-none-eabi-objdump -h -S -z basic-passwdcheck-CW308_STM32F3.elf > basic-passwdcheck-CW308_STM32F3.lss
+.
+Creating Symbol Table: basic-passwdcheck-CW308_STM32F3.sym
+arm-none-eabi-nm -n basic-passwdcheck-CW308_STM32F3.elf > basic-passwdcheck-CW308_STM32F3.sym
+Size after:
+   text	   data	    bss	    dec	    hex	filename
+   4528	      8	   1176	   5712	   1650	basic-passwdcheck-CW308_STM32F3.elf
++--------------------------------------------------------
++ Default target does full rebuild each time.
++ Specify buildtarget == allquick == to avoid full rebuild
++--------------------------------------------------------
++--------------------------------------------------------
++ Built for platform CW308T: STM32F3 Target with:
++ CRYPTO_TARGET = NONE
++ CRYPTO_OPTIONS = AES128C
++--------------------------------------------------------

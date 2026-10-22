@@ -1,0 +1,8 @@
+Date: 2026-10-22 (Asia/Seoul)
+Requested target change: STM32F303
+Firmware build: PASS for CWLITEARM password and TinyAES targets
+Capture-device enumeration after target change: 0 ChipWhisperer devices
+macOS USB registry match for NewAE/ChipWhisperer: none
+Serial endpoints matching /dev/cu.usbmodem*: none
+
+No F303 programming, reset, trigger arming, or capture was attempted because the CW-Lite capture device itself was not present on USB.

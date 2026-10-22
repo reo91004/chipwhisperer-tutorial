@@ -1,0 +1,4 @@
+evidence/*.log -whitespace
+firmware/mcu/** -whitespace
+firmware/prebuilt/*.hex -whitespace
+runs/** -whitespace

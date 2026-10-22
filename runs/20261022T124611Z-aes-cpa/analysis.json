@@ -1,0 +1,86 @@
+{
+  "evidence_origin": "measured",
+  "evidence_purpose": "claim_bearing",
+  "measurement_scope": "CW-Lite power capture of bundled TinyAES on user-identified STM32F303",
+  "status": "passed",
+  "known_key": "2b7e151628aed2a6abf7158809cf4f3c",
+  "recovered_key": "2b7e151628aed2a6abf7158809cf4f3c",
+  "matching_bytes": 16,
+  "byte_scores": [
+    0.8934502702075076,
+    0.8397970923406576,
+    0.8657169361427604,
+    0.8405085432582408,
+    0.8716843040488338,
+    0.8451580900696944,
+    0.8711137173019523,
+    0.8348121707916253,
+    0.8710420818473585,
+    0.8598709358160282,
+    0.8672324284662896,
+    0.8517535068026958,
+    0.8703265755487621,
+    0.8414468197522151,
+    0.8621934598141545,
+    0.8100413514427784
+  ],
+  "peak_samples": [
+    1306,
+    1482,
+    1658,
+    1834,
+    1346,
+    2042,
+    1698,
+    1874,
+    1386,
+    1562,
+    1738,
+    1914,
+    1426,
+    1602,
+    1778,
+    1954
+  ],
+  "first_byte_wrong_window_0_50_score": 0.08960822649740732,
+  "first_byte_full_window_score": 0.8934502702075076,
+  "convergence": [
+    {
+      "trace_count": 25,
+      "true_key_rank": 1,
+      "true_score": 0.8756417738517456,
+      "best_wrong_score": 0.8544003745317531
+    },
+    {
+      "trace_count": 50,
+      "true_key_rank": 1,
+      "true_score": 0.8729931738634505,
+      "best_wrong_score": 0.6358940031465667
+    },
+    {
+      "trace_count": 100,
+      "true_key_rank": 1,
+      "true_score": 0.8704309117750121,
+      "best_wrong_score": 0.5124476686127379
+    },
+    {
+      "trace_count": 200,
+      "true_key_rank": 1,
+      "true_score": 0.8829957096374301,
+      "best_wrong_score": 0.37410264189018644
+    },
+    {
+      "trace_count": 300,
+      "true_key_rank": 1,
+      "true_score": 0.8849856467668668,
+      "best_wrong_score": 0.3243516038434873
+    },
+    {
+      "trace_count": 500,
+      "true_key_rank": 1,
+      "true_score": 0.8934502702075076,
+      "best_wrong_score": 0.2712025067399936
+    }
+  ],
+  "claim_scope": "measured first-round leakage and isolated TinyAES key recovery on this STM32F303 run"
+}

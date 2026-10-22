@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "evidence_origin": "measured",
+  "evidence_purpose": "claim_bearing",
+  "measurement_scope": "CW-Lite power capture of bundled early-exit password comparison on user-identified STM32F303",
+  "claim_scope": "password recovery for the bundled early-exit comparison firmware on this STM32F303 run",
+  "method": "one invalid reference and one trace per alphabetic candidate; full 3000-sample sum of absolute differences",
+  "accepted_trace_count": 185,
+  "recovered_password": "h0px3",
+  "first_position_best_score": 248593.0,
+  "first_position_second_score": 9464.0,
+  "recovery_validation": "passed"
+}

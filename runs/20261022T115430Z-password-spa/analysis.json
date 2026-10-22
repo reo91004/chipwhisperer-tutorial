@@ -1,0 +1,13 @@
+{
+  "status": "rejected_for_password_recovery",
+  "original_method": "sum(abs(candidate_mean - reference_mean)) over samples 0:1000",
+  "original_result": "ouf6b",
+  "expected_bundled_password": "h0px3",
+  "interpretation": "The acquisition completed, but this score did not recover the bundled password and is not claim-bearing recovery evidence.",
+  "exploratory_follow_up": {
+    "calibration_data": "position 0 of this run; the tutorial discloses that the first character is h",
+    "selected_method": "maximum 25-sample local SAD from the across-candidate median waveform",
+    "position_0_result": "h ranked first",
+    "validation_rule": "freeze this method and validate it on a new physical run; do not reinterpret this run as a successful full recovery"
+  }
+}

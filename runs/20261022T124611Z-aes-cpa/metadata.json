@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "run_id": "20261022T124611Z-aes-cpa",
+  "kind": "measured_aes_cpa",
+  "state": "complete",
+  "started_at": "2026-10-22T12:46:11.187400+00:00",
+  "evidence_tier": "physical measurement",
+  "claim_scope": "isolated software AES-128 first-round leakage and key recovery on STM32F303",
+  "target_identity": {
+    "platform": "CWLITEARM",
+    "user_identification": "STM32F303",
+    "software_verified_exact_board_variant": false
+  },
+  "firmware": {
+    "path": "/Users/reo/Documents/Repository/chipwhisperer-tutorial/firmware/prebuilt/simpleserial-aes-CWLITEARM.hex",
+    "sha256": "619460b1779e9490843c0ad41d43e76b8aaf2a550273fa04aaee5fc08497d3de",
+    "crypto_target": "TINYAES128C",
+    "ss_ver": "SS_VER_1_1"
+  },
+  "requested_trace_count": 500,
+  "seed": 20261022,
+  "host": {
+    "python": "3.11.3",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "chipwhisperer": "7.0.0"
+  },
+  "negative_control": "samples 0:50 precede the synthetic lesson POIs; measured run evaluates an explicit wrong window after capture",
+  "measurement_setup": {
+    "device": {
+      "name": "ChipWhisperer-Lite",
+      "sn": "50203220594a48303130373132323034",
+      "hw_loc": [
+        0,
+        5
+      ]
+    },
+    "scope_type": "OpenADC",
+    "gain_db": 24.8359375,
+    "samples": 5000,
+    "offset": 0,
+    "adc_source": "clkgen_x4",
+    "adc_frequency_hz": 29538459.0,
+    "clock_generator_hz": 7384615.384615385,
+    "clock_generator_locked": true,
+    "trigger": "tio4",
+    "tio1": "serial_rx",
+    "tio2": "serial_tx",
+    "tio4": "high_z",
+    "hs2": "clkgen",
+    "expected_samples": 5000
+  },
+  "preflight": {
+    "status": "passed",
+    "nist_vector": "FIPS-197 Appendix B Cipher Example",
+    "response": "3925841d02dc09fbdc118597196a0b32"
+  },
+  "finished_at": "2026-10-22T12:46:35.177315+00:00",
+  "accepted_trace_count": 500,
+  "raw_artifact": "traces.npz"
+}

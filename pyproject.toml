@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chipwhisperer-undergrad-tutorial"
+version = "0.1.0"
+description = "시각적으로 배우는 ChipWhisperer 부채널 분석 실습"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "GPL-3.0-or-later"}
+dependencies = [
+  "chipwhisperer>=7,<8",
+  "ipykernel>=6",
+  "jupyterlab>=4",
+  "matplotlib>=3.8",
+  "nbclient>=0.10",
+  "nbformat>=5.9",
+  "numpy>=1.26",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

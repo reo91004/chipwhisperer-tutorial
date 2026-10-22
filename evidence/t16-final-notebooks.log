@@ -1,0 +1,18 @@
+[NbConvertApp] Converting notebook notebooks/00_파형과_트리거.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 677441 bytes to notebooks/00_파형과_트리거.ipynb
+[NbConvertApp] Converting notebook notebooks/01_타이밍_SPA_비밀번호.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 200558 bytes to notebooks/01_타이밍_SPA_비밀번호.ipynb
+[NbConvertApp] Converting notebook notebooks/02_TVLA_누설_검정.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 598736 bytes to notebooks/02_TVLA_누설_검정.ipynb
+[NbConvertApp] Converting notebook notebooks/03_DPA_AES_한바이트.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 693947 bytes to notebooks/03_DPA_AES_한바이트.ipynb
+[NbConvertApp] Converting notebook notebooks/04_CPA_AES_전체키.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 553572 bytes to notebooks/04_CPA_AES_전체키.ipynb
+[NbConvertApp] Converting notebook notebooks/05_CWLITE_F303_실측.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 873653 bytes to notebooks/05_CWLITE_F303_실측.ipynb

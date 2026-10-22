@@ -1,0 +1,15 @@
+[NbConvertApp] Converting notebook notebooks/00_파형과_트리거.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 677441 bytes to notebooks/00_파형과_트리거.ipynb
+[NbConvertApp] Converting notebook notebooks/01_타이밍_SPA_비밀번호.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 200000 bytes to notebooks/01_타이밍_SPA_비밀번호.ipynb
+[NbConvertApp] Converting notebook notebooks/02_DPA_AES_한바이트.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 692920 bytes to notebooks/02_DPA_AES_한바이트.ipynb
+[NbConvertApp] Converting notebook notebooks/03_CPA_AES_전체키.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 553316 bytes to notebooks/03_CPA_AES_전체키.ipynb
+[NbConvertApp] Converting notebook notebooks/04_CWLITE_F303_실측.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 751692 bytes to notebooks/04_CWLITE_F303_실측.ipynb

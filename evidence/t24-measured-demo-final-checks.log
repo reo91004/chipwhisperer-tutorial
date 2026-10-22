@@ -1,0 +1,15 @@
+test_chipwhisperer_v7_trace_container_fields (test_tutorial.TutorialAnalysisTests.test_chipwhisperer_v7_trace_container_fields) ... ok
+test_cpa_recovers_full_key_and_wrong_window_is_weaker (test_tutorial.TutorialAnalysisTests.test_cpa_recovers_full_key_and_wrong_window_is_weaker) ... ok
+test_demo_manifest_points_to_complete_measured_runs (test_tutorial.TutorialAnalysisTests.test_demo_manifest_points_to_complete_measured_runs) ... ok
+test_dpa_recovers_first_key_byte (test_tutorial.TutorialAnalysisTests.test_dpa_recovers_first_key_byte) ... ok
+test_fixed_vs_random_tvla_detects_synthetic_leakage (test_tutorial.TutorialAnalysisTests.test_fixed_vs_random_tvla_detects_synthetic_leakage) ... ok
+test_password_sad_recovers_all_characters (test_tutorial.TutorialAnalysisTests.test_password_sad_recovers_all_characters) ... ok
+test_waveform_validity_gate (test_tutorial.TutorialAnalysisTests.test_waveform_validity_gate) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.140s
+
+OK
+four measured main notebooks executed without synthetic fallback
+appendix notebooks 5
+plot labels are English-only

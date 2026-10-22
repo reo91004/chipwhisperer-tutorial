@@ -7,6 +7,7 @@ __pycache__/
 *.egg-info/
 !evidence/
 !evidence/**
+evidence/previews/
 !runs/
 !runs/**
 firmware/mcu/*/objdir-*/

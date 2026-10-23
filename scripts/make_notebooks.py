@@ -119,7 +119,7 @@ CW-Lite USB, 20-pin cable, target 전원, `MEASURE` SMA와 shunt 경로를 차�
 
 같은 펌웨어에 입력 한 글자만 다르게 넣었습니다. 그런데 실제 전력 파형은 달라집니다. 그 차이만 사용해 교육용 금고의 비밀번호 `h0px3`를 복구해 보겠습니다.
 
-이 노트북은 먼저 `h`와 `0`을 측정한 뒤, 비밀번호 공격용 185개를 직접 캡처합니다. 00에서 기록한 비밀번호 펌웨어를 그대로 사용하므로 다시 프로그래밍하지 않습니다. 00을 먼저 실행하십시오. 전체 187개 측정은 약 38초가 걸릴 것으로 예상됩니다.
+이 노트북은 먼저 `h`와 `0`을 측정한 뒤, 비밀번호 공격용 185개를 직접 캡처합니다. 보드에 비밀번호 펌웨어가 있으면 그대로 사용하고, 다른 펌웨어가 올라가 있으면 시작할 때 한 번 다시 올립니다. 00을 건너뛰고 바로 실행해도 됩니다. 전체 187개 측정은 약 38초가 걸릴 것으로 예상됩니다.
             """),
             code("""
 import chipwhisperer as cw
@@ -434,7 +434,7 @@ for count in counts:
             md("""
 # 03. 실제 파형으로 AES 키 복구하기
 
-TVLA에서는 누설 위치만 확인했습니다. 이제 알려진 평문과 키 후보로 AES 첫 라운드 중간값을 예측하고, 새로 측정한 파형 100개에서 16바이트 키를 복구합니다. 02에서 기록한 TinyAES 펌웨어를 그대로 사용하므로 다시 프로그래밍하지 않습니다. 02를 먼저 실행하십시오. 이전 측정에서는 약 10초가 걸렸습니다.
+TVLA에서는 누설 위치만 확인했습니다. 이제 알려진 평문과 키 후보로 AES 첫 라운드 중간값을 예측하고, 새로 측정한 파형 200개에서 16바이트 키를 복구합니다. 보드에 TinyAES 펌웨어가 있으면 그대로 사용하고, 다른 펌웨어가 올라가 있으면 시작할 때 한 번 다시 올립니다. 02를 건너뛰고 바로 실행해도 됩니다. 이전 측정에서는 약 10초가 걸렸습니다.
 
 $$Z = SBox[P \oplus K]$$
 
@@ -459,7 +459,7 @@ devices = cw.list_devices()
 assert len(devices) == 1, f"Expected one ChipWhisperer, found: {devices}"
 run = capture_aes_run(
     ROOT / "firmware/prebuilt/simpleserial-aes-CWLITEARM.hex",
-    trace_count=100,
+    trace_count=200,
     runs_root=ROOT / "runs",
     serial_number=devices[0]["sn"],
     platform_name="CWLITEARM",
@@ -501,40 +501,43 @@ plt.show()
             md("""
 ## DPA로 첫 바이트 찾기
 
-키 후보마다 `SBox[P XOR guess]`의 3번 비트를 예측합니다. 예측 비트가 0인 파형과 1인 파형의 평균을 빼면, 정답 후보에서 실제 누설 시점의 차이가 가장 크게 남습니다. 그래프는 첫 라운드 피크가 모인 800:2300 샘플을 확대합니다.
+키 후보마다 `SBox[P XOR guess]`의 각 비트를 예측합니다. 비트가 0인 파형과 1인 파형의 평균을 뺀 뒤, 비트마다 800:2300 구간의 최대 절댓값을 구해 여덟 점수를 합칩니다. 한 비트만 볼 때보다 우연한 잡음 피크의 영향을 덜 받습니다.
             """),
             code("""
-differences = dpa_differences(traces, plaintexts, byte_index=0, bit=3)
-dpa_scores = np.max(np.abs(differences), axis=1)
-dpa_best = int(np.argmax(dpa_scores))
-dpa_wrong = int(np.argsort(dpa_scores)[-2])
+dpa_window = slice(800, 2300)
+dpa_by_bit = np.stack([
+    dpa_differences(traces, plaintexts, byte_index=0, bit=bit)
+    for bit in range(8)
+])
+dpa_bit_scores = np.max(np.abs(dpa_by_bit[:, :, dpa_window]), axis=2)
+dpa_scores = dpa_bit_scores.sum(axis=0)
+dpa_order = np.argsort(dpa_scores)[::-1]
+dpa_best = int(dpa_order[0])
+dpa_true = int(known_key[0])
+dpa_true_rank = 1 + int(np.where(dpa_order == dpa_true)[0][0])
+dpa_wrong = int(next(candidate for candidate in dpa_order if candidate != dpa_true))
+strongest_bit = int(np.argmax(dpa_bit_scores[:, dpa_true]))
 
 print(f"DPA best guess: 0x{dpa_best:02x}")
-print(f"Known key byte: 0x{known_key[0]:02x}")
-assert dpa_best == int(known_key[0])
+print(f"Known key byte: 0x{dpa_true:02x} (rank {dpa_true_rank}/256)")
+print(f"Strongest displayed bit: {strongest_bit}")
 
 fig, axes = plt.subplots(1, 2, figsize=(15, 4))
-dpa_window = slice(800, 2300)
-image = axes[0].imshow(
-    np.abs(differences[:, dpa_window]),
-    aspect="auto",
-    cmap="viridis",
-    extent=[dpa_window.start, dpa_window.stop, 255, 0],
-)
-axes[0].axhline(dpa_best, color="white", linewidth=1)
-axes[0].set(title="Measured DPA by key guess", xlabel="Sample", ylabel="Key guess")
-fig.colorbar(image, ax=axes[0], label="|Mean difference|")
+top_candidates = dpa_order[:10][::-1]
+colors = ["#e45756" if candidate == dpa_true else "#4c78a8" for candidate in top_candidates]
+axes[0].barh([f"0x{candidate:02x}" for candidate in top_candidates], dpa_scores[top_candidates], color=colors)
+axes[0].set(title="Top DPA candidates", xlabel="Sum of eight bit scores", ylabel="Key guess")
 samples = np.arange(traces.shape[1])[dpa_window]
-axes[1].plot(samples, differences[dpa_best, dpa_window], label=f"Correct 0x{dpa_best:02x}")
-axes[1].plot(samples, differences[dpa_wrong, dpa_window], label=f"Best wrong 0x{dpa_wrong:02x}", alpha=.8)
+axes[1].plot(samples, dpa_by_bit[strongest_bit, dpa_true, dpa_window], label=f"Correct 0x{dpa_true:02x}")
+axes[1].plot(samples, dpa_by_bit[strongest_bit, dpa_wrong, dpa_window], label=f"Best wrong 0x{dpa_wrong:02x}", alpha=.8)
 axes[1].set(title="Correct and wrong DPA traces", xlabel="Sample")
 axes[1].legend()
 plt.show()
             """),
             md("""
-## CPA는 한 비트 대신 Hamming weight 전체를 사용합니다
+## CPA는 Hamming weight를 한 번에 비교합니다
 
-DPA에서는 중간값의 한 비트만 사용했습니다. CPA에서는 `HW(SBox[P XOR guess])`의 0부터 8까지 값을 모두 사용하고, 예측값과 실제 파형의 Pearson 상관계수를 계산합니다. 같은 800:2300 구간에서 정답 후보의 상관 피크를 확인합니다.
+DPA에서는 중간값의 8개 비트를 각각 0과 1로 나눠 비교했습니다. CPA에서는 `HW(SBox[P XOR guess])`의 0부터 8까지 값을 한 번에 사용하고, 예측값과 실제 파형의 Pearson 상관계수를 계산합니다. 같은 800:2300 구간에서 정답 후보의 상관 피크를 확인합니다.
             """),
             code("""
 correlations = cpa_correlations(traces, plaintexts, byte_index=0)
@@ -554,9 +557,9 @@ axes[0].axhline(cpa_best, color="cyan", linewidth=1)
 axes[0].set(title="Measured CPA by key guess", xlabel="Sample", ylabel="Key guess")
 fig.colorbar(image, ax=axes[0], label="|ρ|")
 samples = np.arange(traces.shape[1])[cpa_window]
-axes[1].plot(samples, np.abs(correlations[cpa_best, cpa_window]), label=f"Correct 0x{cpa_best:02x}")
-axes[1].plot(samples, np.abs(correlations[cpa_wrong, cpa_window]), label=f"Best wrong 0x{cpa_wrong:02x}", alpha=.8)
-axes[1].set(title="Correct and wrong CPA traces", xlabel="Sample", ylabel="|ρ|")
+axes[1].plot(samples, np.abs(correlations[cpa_best, cpa_window]), label=f"Best guess 0x{cpa_best:02x}")
+axes[1].plot(samples, np.abs(correlations[cpa_wrong, cpa_window]), label=f"Runner-up 0x{cpa_wrong:02x}", alpha=.8)
+axes[1].set(title="Best and runner-up CPA traces", xlabel="Sample", ylabel="|ρ|")
 axes[1].legend()
 plt.show()
 
@@ -566,10 +569,10 @@ print(f"Maximum correlation: {cpa_scores[cpa_best]:.4f}")
             md("""
 ## 파형 수와 정답 순위
 
-25개부터 500개까지 파형 수를 늘리며 첫 바이트 정답의 순위를 계산합니다. 파형이 늘어나면 가장 강한 오답의 상관은 낮아지고 정답 후보가 안정적으로 분리됩니다.
+25개부터 200개까지 파형 수를 늘리며 첫 바이트 정답의 순위를 계산합니다. 파형이 늘어나면 가장 강한 오답의 상관은 낮아지고 정답 후보가 안정적으로 분리됩니다.
             """),
             code("""
-counts = [25, 50, 75, 100]
+counts = [25, 50, 100, 200]
 true_scores, wrong_scores, ranks = [], [], []
 for count in counts:
     corr = cpa_correlations(traces[:count], plaintexts[:count], byte_index=0)

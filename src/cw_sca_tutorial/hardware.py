@@ -151,6 +151,29 @@ def _trace_wave(trace: Any) -> np.ndarray:
     return np.asarray(trace.trace, dtype=np.float32)
 
 
+def _capture_aes_preflight(cw: Any, scope: Any, target: Any, samples: int) -> tuple[np.ndarray | None, bytes, bool, str]:
+    _reset_target(scope)
+    try:
+        trace = cw.capture_trace(
+            scope,
+            target,
+            bytearray(NIST_PLAINTEXT),
+            bytearray(AES_KEY),
+            as_int=False,
+            always_send_key=True,
+        )
+    except Warning as error:
+        return None, b"", False, f"target command rejected: {error}"
+    if trace is None:
+        return None, b"", False, "capture timeout"
+    wave = _trace_wave(trace)
+    valid, reason = validate_waveform(wave, samples, minimum_peak_to_peak=0.05)
+    output = _trace_output(trace)
+    if output != NIST_CIPHERTEXT:
+        valid, reason = False, f"NIST ciphertext mismatch: {output.hex()}"
+    return wave, output, valid, reason
+
+
 def capture_aes_run(
     firmware_hex: str | Path,
     *,
@@ -230,37 +253,53 @@ def capture_aes_run(
                 "kind": "programming",
                 "at": _now(),
                 "status": "skipped",
-                "reason": "preloaded firmware required",
+                "reason": "verify preloaded firmware before reuse",
                 "firmware_sha256": _sha256(firmware),
                 "platform": platform_name,
             })
         target = cw.target(scope, cw.targets.SimpleSerial)
         target.output_len = 16
-        _reset_target(scope)
 
-        preflight = cw.capture_trace(
-            scope,
-            target,
-            bytearray(NIST_PLAINTEXT),
-            bytearray(AES_KEY),
-            as_int=False,
-            always_send_key=True,
-        )
-        if preflight is None:
-            _append_attempt(attempts_path, {"kind": "preflight", "at": _now(), "status": "rejected", "reason": "capture timeout"})
-            raise RuntimeError("AES preflight capture timed out")
-        preflight_wave = _trace_wave(preflight)
-        valid, reason = validate_waveform(preflight_wave, samples, minimum_peak_to_peak=0.05)
-        preflight_output = _trace_output(preflight)
-        if preflight_output != NIST_CIPHERTEXT:
-            valid, reason = False, f"NIST ciphertext mismatch: {preflight_output.hex()}"
+        preflight_wave, preflight_output, valid, reason = _capture_aes_preflight(cw, scope, target, samples)
         _append_attempt(attempts_path, {
-            "kind": "preflight", "at": _now(), "status": "accepted" if valid else "rejected", "reason": reason,
-            "plaintext": NIST_PLAINTEXT.hex(), "response": preflight_output.hex(), "samples": preflight_wave.size,
+            "kind": "preflight",
+            "at": _now(),
+            "status": "accepted" if valid else "rejected",
+            "stage": "initial",
+            "reason": reason,
+            "plaintext": NIST_PLAINTEXT.hex(),
+            "response": preflight_output.hex(),
+            "samples": 0 if preflight_wave is None else preflight_wave.size,
         })
-        np.save(run / "preflight_trace.npy", preflight_wave)
+        reprogrammed = False
+        if not valid and not program_firmware:
+            if preflight_wave is not None:
+                np.save(run / "preflight_initial_trace.npy", preflight_wave)
+            target.dis()
+            target = None
+            _program(scope, cw, firmware, attempts_path, platform_name)
+            target = cw.target(scope, cw.targets.SimpleSerial)
+            target.output_len = 16
+            preflight_wave, preflight_output, valid, reason = _capture_aes_preflight(cw, scope, target, samples)
+            _append_attempt(attempts_path, {
+                "kind": "preflight",
+                "at": _now(),
+                "status": "accepted" if valid else "rejected",
+                "stage": "after_reprogram",
+                "reason": reason,
+                "plaintext": NIST_PLAINTEXT.hex(),
+                "response": preflight_output.hex(),
+                "samples": 0 if preflight_wave is None else preflight_wave.size,
+            })
+            reprogrammed = True
+        if preflight_wave is not None:
+            np.save(run / "preflight_trace.npy", preflight_wave)
         if not valid:
             raise RuntimeError(f"AES preflight failed: {reason}")
+        metadata["firmware_preflight"] = {
+            "status": "passed",
+            "reprogrammed_after_mismatch": reprogrammed,
+        }
         metadata["preflight"] = {"status": "passed", "nist_vector": "FIPS-197 Appendix B Cipher Example", "response": preflight_output.hex()}
 
         rng = np.random.default_rng(seed)
@@ -331,6 +370,67 @@ def _drain_target(target: Any) -> str:
         time.sleep(0.01)
         waiting = target.in_waiting()
     return "".join(chunks)
+
+
+def _prepare_password_target(
+    scope: Any,
+    cw: Any,
+    firmware: Path,
+    attempts_path: Path,
+    platform_name: str,
+    *,
+    program_firmware: bool,
+) -> tuple[Any, bool]:
+    """Connect to the password target, programming once if the loaded image is wrong."""
+
+    if program_firmware:
+        _program(scope, cw, firmware, attempts_path, platform_name)
+    else:
+        _append_attempt(attempts_path, {
+            "kind": "programming",
+            "at": _now(),
+            "status": "skipped",
+            "reason": "verify preloaded firmware before reuse",
+            "firmware_sha256": _sha256(firmware),
+            "platform": platform_name,
+        })
+
+    target = cw.target(scope, cw.targets.SimpleSerial)
+    _reset_target(scope)
+    boot_output = _drain_target(target)
+    valid = "Safe-o-matic 3000" in boot_output
+    _append_attempt(attempts_path, {
+        "kind": "firmware_preflight",
+        "at": _now(),
+        "status": "accepted" if valid else "rejected",
+        "stage": "initial",
+        "boot_output_prefix": boot_output[:160],
+        "reason": "password boot banner observed" if valid else "password boot banner missing",
+    })
+    if valid:
+        return target, False
+
+    target.dis()
+    if program_firmware:
+        raise RuntimeError("password firmware boot banner missing after programming")
+
+    _program(scope, cw, firmware, attempts_path, platform_name)
+    target = cw.target(scope, cw.targets.SimpleSerial)
+    _reset_target(scope)
+    boot_output = _drain_target(target)
+    valid = "Safe-o-matic 3000" in boot_output
+    _append_attempt(attempts_path, {
+        "kind": "firmware_preflight",
+        "at": _now(),
+        "status": "accepted" if valid else "rejected",
+        "stage": "after_reprogram",
+        "boot_output_prefix": boot_output[:160],
+        "reason": "password boot banner observed" if valid else "password boot banner missing",
+    })
+    if not valid:
+        target.dis()
+        raise RuntimeError("password firmware boot banner missing after one recovery programming attempt")
+    return target, True
 
 
 def _password_capture(
@@ -426,18 +526,18 @@ class PasswordCaptureSession:
             self.metadata["measurement_setup"] = _scope_snapshot(self.scope, device, samples=samples)
             if not self.scope.clock.clkgen_locked:
                 raise RuntimeError("CW-Lite clock generator is not locked")
-            if program_firmware:
-                _program(self.scope, cw, self.firmware, self.attempts_path, platform_name)
-            else:
-                _append_attempt(self.attempts_path, {
-                    "kind": "programming",
-                    "at": _now(),
-                    "status": "skipped",
-                    "reason": "preloaded firmware required",
-                    "firmware_sha256": _sha256(self.firmware),
-                    "platform": platform_name,
-                })
-            self.target = cw.target(self.scope, cw.targets.SimpleSerial)
+            self.target, reprogrammed = _prepare_password_target(
+                self.scope,
+                cw,
+                self.firmware,
+                self.attempts_path,
+                platform_name,
+                program_firmware=program_firmware,
+            )
+            self.metadata["firmware_preflight"] = {
+                "status": "passed",
+                "reprogrammed_after_mismatch": reprogrammed,
+            }
             _write_json(self.metadata_path, self.metadata)
         except Exception as error:
             self.metadata.update({"state": "failed", "finished_at": _now(), "error": repr(error)})
@@ -590,18 +690,18 @@ def capture_password_run(
         metadata["measurement_setup"] = _scope_snapshot(scope, device, samples=samples)
         if not scope.clock.clkgen_locked:
             raise RuntimeError("CW-Lite clock generator is not locked")
-        if program_firmware:
-            _program(scope, cw, firmware, attempts_path, platform_name)
-        else:
-            _append_attempt(attempts_path, {
-                "kind": "programming",
-                "at": _now(),
-                "status": "skipped",
-                "reason": "preloaded firmware required",
-                "firmware_sha256": _sha256(firmware),
-                "platform": platform_name,
-            })
-        target = cw.target(scope, cw.targets.SimpleSerial)
+        target, reprogrammed = _prepare_password_target(
+            scope,
+            cw,
+            firmware,
+            attempts_path,
+            platform_name,
+            program_firmware=program_firmware,
+        )
+        metadata["firmware_preflight"] = {
+            "status": "passed",
+            "reprogrammed_after_mismatch": reprogrammed,
+        }
 
         metadata["minimum_peak_to_peak"] = 50.0
         preflight_wave, boot_output, preflight_response = _password_capture(scope, target, "h", samples, minimum_peak_to_peak=50.0)

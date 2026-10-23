@@ -8,8 +8,8 @@ __pycache__/
 !evidence/
 !evidence/**
 evidence/previews/
-!runs/
-!runs/**
+runs/*
+!runs/README.md
 firmware/mcu/*/objdir-*/
 firmware/mcu/*/*.bin
 firmware/mcu/*/*.eep

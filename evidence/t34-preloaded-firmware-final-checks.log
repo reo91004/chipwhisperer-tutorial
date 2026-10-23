@@ -1,0 +1,15 @@
+test_capture_functions_program_firmware_by_default (test_tutorial.TutorialAnalysisTests.test_capture_functions_program_firmware_by_default) ... ok
+test_chipwhisperer_v7_trace_container_fields (test_tutorial.TutorialAnalysisTests.test_chipwhisperer_v7_trace_container_fields) ... ok
+test_cpa_recovers_full_key_and_wrong_window_is_weaker (test_tutorial.TutorialAnalysisTests.test_cpa_recovers_full_key_and_wrong_window_is_weaker) ... ok
+test_dpa_recovers_first_key_byte (test_tutorial.TutorialAnalysisTests.test_dpa_recovers_first_key_byte) ... ok
+test_fixed_vs_random_tvla_detects_synthetic_leakage (test_tutorial.TutorialAnalysisTests.test_fixed_vs_random_tvla_detects_synthetic_leakage) ... ok
+test_password_sad_recovers_all_characters (test_tutorial.TutorialAnalysisTests.test_password_sad_recovers_all_characters) ... ok
+test_repository_root_finds_prebuilt_firmware (test_tutorial.TutorialAnalysisTests.test_repository_root_finds_prebuilt_firmware) ... ok
+test_waveform_validity_gate (test_tutorial.TutorialAnalysisTests.test_waveform_validity_gate) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.126s
+
+OK
+live notebooks parse and remain unexecuted
+Git tracks only runs/README.md

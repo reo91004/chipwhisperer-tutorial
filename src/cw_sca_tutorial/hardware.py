@@ -163,6 +163,7 @@ def capture_aes_run(
     platform_name: str = "CWLITEARM",
     target_identification: str = "STM32F303",
     capture_mode: str = "random",
+    program_firmware: bool = True,
 ) -> Path:
     """STM32 대상의 소프트웨어 AES 파형을 캡처한다. 자동 재시도는 하지 않는다."""
 
@@ -201,6 +202,7 @@ def capture_aes_run(
         "firmware": {"path": str(firmware), "sha256": _sha256(firmware), "crypto_target": "TINYAES128C", "ss_ver": "SS_VER_1_1"},
         "requested_trace_count": trace_count,
         "capture_mode": capture_mode,
+        "program_firmware": program_firmware,
         "seed": seed,
         "host": {"python": platform.python_version(), "platform": platform.platform(), "chipwhisperer": cw.__version__},
         "negative_control": "samples 0:50 precede the synthetic lesson POIs; measured run evaluates an explicit wrong window after capture",
@@ -221,7 +223,17 @@ def capture_aes_run(
         metadata["measurement_setup"] = _scope_snapshot(scope, device, samples=samples)
         if not scope.clock.clkgen_locked:
             raise RuntimeError("CW-Lite clock generator is not locked")
-        _program(scope, cw, firmware, attempts_path, platform_name)
+        if program_firmware:
+            _program(scope, cw, firmware, attempts_path, platform_name)
+        else:
+            _append_attempt(attempts_path, {
+                "kind": "programming",
+                "at": _now(),
+                "status": "skipped",
+                "reason": "preloaded firmware required",
+                "firmware_sha256": _sha256(firmware),
+                "platform": platform_name,
+            })
         target = cw.target(scope, cw.targets.SimpleSerial)
         target.output_len = 16
         _reset_target(scope)
@@ -359,6 +371,7 @@ def capture_password_run(
     serial_number: str | None = None,
     platform_name: str = "CWLITEARM",
     target_identification: str = "STM32F303",
+    program_firmware: bool = True,
 ) -> Path:
     """조기 종료 비밀번호 비교의 파형을 수집하고 다섯 글자를 순차 복구한다."""
 
@@ -383,6 +396,7 @@ def capture_password_run(
         "target_identity": {"platform": platform_name, "user_identification": target_identification, "software_verified_exact_board_variant": False},
         "firmware": {"path": str(firmware), "sha256": _sha256(firmware), "ss_ver": "SS_VER_1_0"},
         "repeats": repeats,
+        "program_firmware": program_firmware,
         "score_samples": score_samples,
         "scoring": "sum(abs(candidate_mean - invalid_reference_mean)) over the configured sample window",
         "capture_order": "alphabetical, matching upstream Lab 2_1B",
@@ -406,13 +420,35 @@ def capture_password_run(
         metadata["measurement_setup"] = _scope_snapshot(scope, device, samples=samples)
         if not scope.clock.clkgen_locked:
             raise RuntimeError("CW-Lite clock generator is not locked")
-        _program(scope, cw, firmware, attempts_path, platform_name)
+        if program_firmware:
+            _program(scope, cw, firmware, attempts_path, platform_name)
+        else:
+            _append_attempt(attempts_path, {
+                "kind": "programming",
+                "at": _now(),
+                "status": "skipped",
+                "reason": "preloaded firmware required",
+                "firmware_sha256": _sha256(firmware),
+                "platform": platform_name,
+            })
         target = cw.target(scope, cw.targets.SimpleSerial)
 
         metadata["minimum_peak_to_peak"] = 50.0
         preflight_wave, boot_output, preflight_response = _password_capture(scope, target, "h", samples, minimum_peak_to_peak=50.0)
         np.save(run / "preflight_trace.npy", preflight_wave)
-        _append_attempt(attempts_path, {"kind": "preflight", "at": _now(), "status": "accepted", "guess": "h", "samples": preflight_wave.size, "boot_output_prefix": boot_output[:120], "response": preflight_response[:120]})
+        preflight_valid = "PASSWORD FAIL" in preflight_response
+        _append_attempt(attempts_path, {
+            "kind": "preflight",
+            "at": _now(),
+            "status": "accepted" if preflight_valid else "rejected",
+            "guess": "h",
+            "samples": preflight_wave.size,
+            "boot_output_prefix": boot_output[:120],
+            "response": preflight_response[:120],
+            "reason": "expected PASSWORD FAIL" if not preflight_valid else "accepted",
+        })
+        if not preflight_valid:
+            raise RuntimeError(f"password firmware preflight failed: {preflight_response!r}")
         metadata["preflight"] = {"status": "passed", "guess": "h", "response": preflight_response[:120]}
 
         prefix = ""

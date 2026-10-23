@@ -115,7 +115,7 @@ CW-Lite USB, 20-pin cable, target 전원, `MEASURE` SMA와 shunt 경로를 차�
 
 같은 펌웨어에 입력 한 글자만 다르게 넣었습니다. 그런데 실제 전력 파형은 달라집니다. 그 차이만 사용해 교육용 금고의 비밀번호 `h0px3`를 복구해 보겠습니다.
 
-이 노트북을 실행할 때 STM32F303과 ChipWhisperer-Lite에서 후보 185개를 직접 측정합니다. 시작 셀은 target 플래시를 지우고 번들 비밀번호 펌웨어를 기록합니다. 이전 측정에서 약 37초가 걸렸습니다.
+이 노트북을 실행할 때 STM32F303과 ChipWhisperer-Lite에서 후보 185개를 직접 측정합니다. 00에서 기록한 비밀번호 펌웨어를 그대로 사용하므로 다시 프로그래밍하지 않습니다. 00을 먼저 실행하십시오. 이전 측정에서 약 37초가 걸렸습니다.
             """),
             code("""
 import chipwhisperer as cw
@@ -137,6 +137,7 @@ run = capture_password_run(
     serial_number=devices[0]["sn"],
     platform_name="CWLITEARM",
     target_identification="STM32F303",
+    program_firmware=False,
 )
 metadata = json.loads((run / "metadata.json").read_text())
 data = np.load(run / "traces.npz")
@@ -224,6 +225,9 @@ for index in ranking:
 찾은 문자를 접두사에 붙이고 같은 과정을 다음 위치에서 반복합니다. 아래 셀은 저장된 원시 파형에서 SAD를 다시 계산해 선택 순서를 만듭니다.
             """),
             code("""
+from IPython.display import clear_output, display
+import time
+
 prefixes = []
 score_rows = []
 prefix = ""
@@ -238,13 +242,38 @@ for position in range(5):
         scores.append(np.sum(np.abs(candidate_traces.mean(axis=0) - reference)))
     scores = np.asarray(scores)
     score_rows.append(scores)
-    prefix += alphabet[int(np.argmax(scores))]
+
+    selected_index = int(np.argmax(scores))
+    prefix += alphabet[selected_index]
     prefixes.append(prefix)
-    print(prefix)
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 4), gridspec_kw={"width_ratios": [3, 1]})
+    bars = axes[0].bar(list(alphabet), scores, color="#4c78a8")
+    bars[selected_index].set_color("#e45756")
+    axes[0].set(
+        title=f"Position {position + 1}: selected '{alphabet[selected_index]}'",
+        xlabel="Candidate",
+        ylabel="Full-trace SAD",
+    )
+    axes[1].axis("off")
+    axes[1].text(.5, .62, "Recovered prefix", ha="center", fontsize=14)
+    axes[1].text(.5, .42, prefix, ha="center", fontsize=34, weight="bold", color="#e45756")
+    axes[1].text(.5, .22, f"{position + 1} / 5 characters", ha="center", fontsize=12)
+    clear_output(wait=True)
+    display(fig)
+    plt.close(fig)
+    if position < 4:
+        time.sleep(.8)
 
 assert prefixes[-1] == "h0px3"
 assert prefixes == [decision["prefix"] for decision in metadata["decisions"]]
+            """),
+            md("""
+## 다섯 단계 한눈에 보기
 
+애니메이션에서 선택한 점수를 한 장의 heatmap으로 모읍니다. 각 행에서 밝은 칸이 `h`, `0`, `p`, `x`, `3` 순서로 이동합니다.
+            """),
+            code("""
 fig, ax = plt.subplots(figsize=(14, 4))
 image = ax.imshow(np.stack(score_rows), aspect="auto", cmap="magma")
 ax.set_xticks(range(len(alphabet)), list(alphabet))
@@ -373,6 +402,9 @@ assert np.max(np.abs(t_values)) > threshold
 각 그룹에서 사용하는 파형 수를 늘리며 최대 `|t|`를 다시 계산합니다. TVLA는 누설 위치를 찾는 검사이며, 이 단계에서는 아직 키 후보를 사용하지 않습니다.
             """),
             code("""
+from IPython.display import clear_output, display
+import time
+
 counts = [10, 25, 50, 75, 100]
 max_t = []
 for count in counts:
@@ -382,13 +414,20 @@ for count in counts:
     ])
     max_t.append(float(np.max(np.abs(welch_t_test(traces[subset], groups[subset])))))
 
-plt.figure(figsize=(8, 4))
-plt.plot(counts, max_t, "o-")
-plt.axhline(4.5, color="#e45756", linestyle="--")
-plt.xlabel("Traces per group")
-plt.ylabel("Maximum |t|")
-plt.title("Measured TVLA convergence")
-plt.show()
+    fig, ax = plt.subplots(figsize=(9, 4))
+    ax.plot(counts[:len(max_t)], max_t, "o-", linewidth=2)
+    ax.axhline(4.5, color="#e45756", linestyle="--", label="|t| = 4.5 threshold")
+    ax.set_xlim(0, 105)
+    ax.set_ylim(0, max(8, max(max_t) * 1.15))
+    ax.set(title="Measured TVLA convergence", xlabel="Traces per group", ylabel="Maximum |t|")
+    status = "LEAKAGE DETECTED" if max_t[-1] > 4.5 else "collecting traces..."
+    ax.text(.98, .12, status, transform=ax.transAxes, ha="right", fontsize=14, weight="bold", color="#e45756")
+    ax.legend(loc="upper left")
+    clear_output(wait=True)
+    display(fig)
+    plt.close(fig)
+    if count < counts[-1]:
+        time.sleep(.6)
             """),
         ],
     )
@@ -400,7 +439,7 @@ plt.show()
             md("""
 # 03. 실제 파형으로 AES 키 복구하기
 
-TVLA에서는 누설 위치만 확인했습니다. 이제 알려진 평문과 키 후보로 AES 첫 라운드 중간값을 예측하고, 새로 측정한 파형 100개에서 16바이트 키를 복구합니다. 시작 셀은 target 플래시를 지우고 번들 TinyAES 펌웨어를 기록합니다. 이전 측정에서는 약 10초가 걸렸습니다.
+TVLA에서는 누설 위치만 확인했습니다. 이제 알려진 평문과 키 후보로 AES 첫 라운드 중간값을 예측하고, 새로 측정한 파형 100개에서 16바이트 키를 복구합니다. 02에서 기록한 TinyAES 펌웨어를 그대로 사용하므로 다시 프로그래밍하지 않습니다. 02를 먼저 실행하십시오. 이전 측정에서는 약 10초가 걸렸습니다.
 
 $$Z = SBox[P \oplus K]$$
 
@@ -426,6 +465,7 @@ run = capture_aes_run(
     serial_number=devices[0]["sn"],
     platform_name="CWLITEARM",
     target_identification="STM32F303",
+    program_firmware=False,
 )
 metadata = json.loads((run / "metadata.json").read_text())
 data = np.load(run / "traces.npz")
@@ -555,13 +595,39 @@ plt.show()
 같은 CPA를 나머지 15바이트에도 적용합니다. 아래 두 줄이 같으면 16바이트를 모두 복구한 것입니다.
             """),
             code("""
+from IPython.display import HTML, clear_output, display
+import time
+
 recovered, byte_scores, peak_samples = recover_key_cpa(traces, plaintexts)
+assert np.array_equal(recovered, known_key)
+
+for count in range(1, 17):
+    visible = [f"{value:02x}" for value in recovered[:count]] + ["??"] * (16 - count)
+    boxes = " ".join(
+        f"<span style='display:inline-block;padding:8px 10px;margin:2px;border-radius:5px;"
+        f"background:{'#e45756' if index < count else '#dddddd'};color:{'white' if index < count else '#666666'};"
+        f"font-family:monospace;font-size:18px'>{value}</span>"
+        for index, value in enumerate(visible)
+    )
+    clear_output(wait=True)
+    display(HTML(
+        f"<h3>Recovering AES-128 key: {count} / 16 bytes</h3>"
+        f"<div>{boxes}</div>"
+        f"<p style='font-family:monospace'>Current: {''.join(visible)}</p>"
+    ))
+    if count < 16:
+        time.sleep(.18)
 
 print("Expected :", bytes(known_key).hex())
 print("Recovered:", bytes(recovered).hex())
-print(f"Matching : {int(np.sum(recovered == known_key))} / 16 bytes")
-assert np.array_equal(recovered, known_key)
+print("Matching : 16 / 16 bytes")
+            """),
+            md("""
+## 바이트별 상관 피크
 
+막대 높이는 각 바이트 정답 후보의 최대 상관계수입니다. 막대 위 숫자는 해당 피크가 나타난 샘플 위치입니다.
+            """),
+            code("""
 fig, ax = plt.subplots(figsize=(12, 4))
 bars = ax.bar(range(16), byte_scores, color="#4c78a8")
 ax.set_xticks(range(16), [f"{value:02x}" for value in recovered])

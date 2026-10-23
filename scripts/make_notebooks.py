@@ -119,12 +119,11 @@ CW-Lite USB, 20-pin cable, target 전원, `MEASURE` SMA와 shunt 경로를 차�
 
 같은 펌웨어에 입력 한 글자만 다르게 넣었습니다. 그런데 실제 전력 파형은 달라집니다. 그 차이만 사용해 교육용 금고의 비밀번호 `h0px3`를 복구해 보겠습니다.
 
-이 노트북을 실행할 때 STM32F303과 ChipWhisperer-Lite에서 후보 185개를 직접 측정합니다. 00에서 기록한 비밀번호 펌웨어를 그대로 사용하므로 다시 프로그래밍하지 않습니다. 00을 먼저 실행하십시오. 이전 측정에서 약 37초가 걸렸습니다.
+이 노트북은 먼저 `h`와 `0`을 측정한 뒤, 비밀번호 공격용 185개를 직접 캡처합니다. 00에서 기록한 비밀번호 펌웨어를 그대로 사용하므로 다시 프로그래밍하지 않습니다. 00을 먼저 실행하십시오. 전체 187개 측정은 약 38초가 걸릴 것으로 예상됩니다.
             """),
             code("""
 import chipwhisperer as cw
 import importlib
-import json
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -132,14 +131,18 @@ from cw_sca_tutorial.demo import repository_root
 import cw_sca_tutorial.hardware as hardware
 
 hardware = importlib.reload(hardware)
-capture_password_run = hardware.capture_password_run
+PasswordCaptureSession = hardware.PasswordCaptureSession
 
 ROOT = repository_root()
 devices = cw.list_devices()
 assert len(devices) == 1, f"Expected one ChipWhisperer, found: {devices}"
-run = capture_password_run(
+try:
+    session.finish()
+except NameError:
+    pass
+
+session = PasswordCaptureSession(
     ROOT / "firmware/prebuilt/basic-passwdcheck-CWLITEARM.hex",
-    repeats=1,
     gain_db=25.0,
     runs_root=ROOT / "runs",
     serial_number=devices[0]["sn"],
@@ -147,30 +150,21 @@ run = capture_password_run(
     target_identification="STM32F303",
     program_firmware=False,
 )
-metadata = json.loads((run / "metadata.json").read_text())
-data = np.load(run / "traces.npz")
-
-traces = data["traces"]
-guesses = data["guesses"]
-positions = data["positions"]
-kinds = data["kinds"]
-
 print("DATA SOURCE : MEASURED")
-print("RUN         :", run.name)
-print("TARGET      :", metadata["target_identity"]["user_identification"])
-print("SCOPE       :", metadata["measurement_setup"]["device"]["name"])
-print("TRACES      :", traces.shape)
+print("RUN         :", session.run.name)
+print("TARGET      : STM32F303")
+print("SCOPE       :", devices[0]["name"])
+print("STATUS      : ready for cell-by-cell capture")
             """),
             md("""
 ## 입력 한 글자가 만든 차이
 
-`a`는 첫 비교에서 바로 틀립니다. `h`는 첫 글자가 맞아서 다음 글자까지 비교합니다. 왼쪽에서는 전체 파형을 겹쳐 보고, 오른쪽에서는 차이가 가장 큰 구간을 확대합니다.
+`0`은 첫 비교에서 바로 틀립니다. `h`는 첫 글자가 맞아서 다음 글자까지 비교합니다. 이 셀을 실행하면 두 입력을 그 자리에서 측정합니다. 왼쪽에서는 전체 파형을 겹쳐 보고, 오른쪽에서는 차이가 가장 큰 구간을 확대합니다.
             """),
             code("""
-first_position = positions == 0
-reference = traces[first_position & (kinds == "reference")][0]
-trace_a = traces[first_position & (kinds == "candidate") & (guesses == "a")][0]
-trace_h = traces[first_position & (kinds == "candidate") & (guesses == "h")][0]
+trace_h = session.capture("h")
+trace_0 = session.capture("0")
+reference = trace_0
 
 difference = np.abs(trace_h - reference)
 window = 120
@@ -179,13 +173,11 @@ start = int(np.argmax(rolling))
 zoom = slice(max(0, start - 80), min(len(reference), start + window + 80))
 
 fig, axes = plt.subplots(1, 2, figsize=(15, 4))
-axes[0].plot(reference, label="Invalid reference", alpha=.8)
-axes[0].plot(trace_a, label="Candidate a", alpha=.8)
+axes[0].plot(trace_0, label="Candidate 0", alpha=.8)
 axes[0].plot(trace_h, label="Candidate h", linewidth=1.5)
 axes[0].set(title="Measured password traces", xlabel="Sample", ylabel="ADC count")
 axes[0].legend()
 axes[1].plot(np.arange(len(reference))[zoom], trace_h[zoom] - reference[zoom], label="h - reference")
-axes[1].plot(np.arange(len(reference))[zoom], trace_a[zoom] - reference[zoom], label="a - reference", alpha=.8)
 axes[1].axhline(0, color="black", linewidth=.7)
 axes[1].set(title="Largest difference window", xlabel="Sample", ylabel="ADC difference")
 axes[1].legend()
@@ -207,30 +199,27 @@ for (i = 0; i < sizeof(correct_passwd); i++) {
 맞는 접두사가 길수록 비교 루프를 더 오래 실행합니다. 이 실행 경로 차이가 전력 파형에 남습니다.
             """),
             md("""
-## 36개 후보 중 첫 글자 찾기
+## 후보 점수 계산 함수
 
-항상 틀리는 기준 파형과 각 후보 파형의 절댓값 차이 합(SAD)을 계산합니다. 점수가 가장 큰 후보가 다음 비교로 넘어간 문자입니다.
+각 위치에서 항상 틀리는 기준 입력을 한 번 측정하고 36개 후보를 차례로 캡처합니다. 기준 파형과 후보 파형의 절댓값 차이 합(SAD)을 점수로 사용합니다.
             """),
             code("""
 alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
-first_scores = metadata["decisions"][0]["scores"]
-score_values = np.array([first_scores[c] for c in alphabet])
-best_index = int(np.argmax(score_values))
 
-fig, ax = plt.subplots(figsize=(13, 4))
-bars = ax.bar(list(alphabet), score_values, color="#4c78a8")
-bars[best_index].set_color("#e45756")
-ax.set(title=f"First character: {alphabet[best_index]}", xlabel="Candidate", ylabel="Full-trace SAD")
-plt.show()
+def capture_candidate_scores(prefix):
+    reference = session.capture(prefix + "\x01")
+    scores = []
+    for candidate in alphabet:
+        wave = session.capture(prefix + candidate)
+        scores.append(np.sum(np.abs(wave - reference)))
+    return np.asarray(scores)
 
-ranking = np.argsort(score_values)[::-1][:5]
-for index in ranking:
-    print(f"{alphabet[index]}: {score_values[index]:.0f}")
+print("Ready: one reference + 36 candidates per position")
             """),
             md("""
 ## 비밀번호 전체 복구
 
-찾은 문자를 접두사에 붙이고 같은 과정을 다음 위치에서 반복합니다. 아래 셀은 저장된 원시 파형에서 SAD를 다시 계산해 선택 순서를 만듭니다.
+이 셀 하나가 다섯 위치를 순서대로 공격합니다. 위치 하나의 캡처가 끝날 때마다 현재 후보 점수, 누적 heatmap, 복구된 접두사가 함께 갱신됩니다.
             """),
             code("""
 from IPython.display import clear_output, display
@@ -239,56 +228,51 @@ import time
 prefixes = []
 score_rows = []
 prefix = ""
-for position in range(5):
-    mask = positions == position
-    reference = traces[mask & (kinds == "reference")].mean(axis=0)
-    scores = []
-    for candidate in alphabet:
-        guess = prefix + candidate
-        candidate_traces = traces[mask & (kinds == "candidate") & (guesses == guess)]
-        assert len(candidate_traces) >= 1, (position, guess)
-        scores.append(np.sum(np.abs(candidate_traces.mean(axis=0) - reference)))
-    scores = np.asarray(scores)
-    score_rows.append(scores)
+completed_run = None
+try:
+    for position in range(5):
+        scores = capture_candidate_scores(prefix)
+        score_rows.append(scores)
 
-    selected_index = int(np.argmax(scores))
-    prefix += alphabet[selected_index]
-    prefixes.append(prefix)
+        selected_index = int(np.argmax(scores))
+        prefix += alphabet[selected_index]
+        prefixes.append(prefix)
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 4), gridspec_kw={"width_ratios": [3, 1]})
-    bars = axes[0].bar(list(alphabet), scores, color="#4c78a8")
-    bars[selected_index].set_color("#e45756")
-    axes[0].set(
-        title=f"Position {position + 1}: selected '{alphabet[selected_index]}'",
-        xlabel="Candidate",
-        ylabel="Full-trace SAD",
-    )
-    axes[1].axis("off")
-    axes[1].text(.5, .62, "Recovered prefix", ha="center", fontsize=14)
-    axes[1].text(.5, .42, prefix, ha="center", fontsize=34, weight="bold", color="#e45756")
-    axes[1].text(.5, .22, f"{position + 1} / 5 characters", ha="center", fontsize=12)
-    clear_output(wait=True)
-    display(fig)
-    plt.close(fig)
-    if position < 4:
-        time.sleep(.8)
+        heatmap = np.full((5, len(alphabet)), np.nan)
+        heatmap[:len(score_rows)] = np.stack(score_rows)
+        fig, axes = plt.subplots(
+            1,
+            3,
+            figsize=(17, 4),
+            gridspec_kw={"width_ratios": [3, 2.2, 1.2]},
+        )
+        bars = axes[0].bar(list(alphabet), scores, color="#4c78a8")
+        bars[selected_index].set_color("#e45756")
+        axes[0].set(
+            title=f"Position {position + 1}: selected '{alphabet[selected_index]}'",
+            xlabel="Candidate",
+            ylabel="Full-trace SAD",
+        )
+        image = axes[1].imshow(heatmap, aspect="auto", cmap="magma")
+        axes[1].set_xticks(range(len(alphabet)), list(alphabet))
+        axes[1].set_yticks(range(5), ["1", "2", "3", "4", "5"])
+        axes[1].set(title="Accumulated scores", xlabel="Candidate", ylabel="Position")
+        fig.colorbar(image, ax=axes[1], label="SAD")
+        axes[2].axis("off")
+        axes[2].text(.5, .88, "Recovered", ha="center", fontsize=14)
+        axes[2].text(.5, .72, prefix, ha="center", fontsize=30, weight="bold", color="#e45756")
+        axes[2].text(.5, .48, "\\n".join(prefixes), ha="center", va="top", fontsize=15, family="monospace")
+        clear_output(wait=True)
+        display(fig)
+        plt.close(fig)
+        if position < 4:
+            time.sleep(.8)
+finally:
+    completed_run = session.finish()
 
-assert prefixes[-1] == "h0px3"
-assert prefixes == [decision["prefix"] for decision in metadata["decisions"]]
-            """),
-            md("""
-## 다섯 단계 한눈에 보기
-
-애니메이션에서 선택한 점수를 한 장의 heatmap으로 모읍니다. 각 행에서 밝은 칸이 `h`, `0`, `p`, `x`, `3` 순서로 이동합니다.
-            """),
-            code("""
-fig, ax = plt.subplots(figsize=(14, 4))
-image = ax.imshow(np.stack(score_rows), aspect="auto", cmap="magma")
-ax.set_xticks(range(len(alphabet)), list(alphabet))
-ax.set_yticks(range(5), ["Position 1", "Position 2", "Position 3", "Position 4", "Position 5"])
-ax.set(title="Measured password candidate scores", xlabel="Candidate")
-fig.colorbar(image, ax=ax, label="SAD")
-plt.show()
+assert prefix == "h0px3"
+print("Recovered password:", prefix)
+print("Saved run:", completed_run)
             """),
         ],
     )
@@ -405,7 +389,6 @@ axes[1].legend()
 plt.show()
 
 print(f"maximum |t| = {abs(t_values[peak]):.2f} at sample {peak}")
-print(f"comparison window 0:50 maximum |t| = {np.max(np.abs(t_values[:50])):.2f}")
 assert np.max(np.abs(t_values)) > threshold
             """),
             md("""

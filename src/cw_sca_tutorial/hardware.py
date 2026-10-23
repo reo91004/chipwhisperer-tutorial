@@ -359,6 +359,176 @@ def _password_capture(
     return wave, boot_output, response
 
 
+class PasswordCaptureSession:
+    """Jupyter 셀마다 비밀번호 추측을 캡처하고 즉시 run에 보존한다."""
+
+    def __init__(
+        self,
+        firmware_hex: str | Path,
+        *,
+        samples: int = 3000,
+        gain_db: float = 25.0,
+        runs_root: str | Path = "runs",
+        serial_number: str | None = None,
+        platform_name: str = "CWLITEARM",
+        target_identification: str = "STM32F303",
+        program_firmware: bool = False,
+    ) -> None:
+        import chipwhisperer as cw
+
+        self.firmware = Path(firmware_hex).resolve()
+        if not self.firmware.is_file():
+            raise FileNotFoundError(self.firmware)
+        self.samples = samples
+        self.run = _new_run(Path(runs_root), "password-interactive")
+        self.attempts_path = self.run / "attempts.jsonl"
+        self.metadata_path = self.run / "metadata.json"
+        self.traces: list[np.ndarray] = []
+        self.guesses: list[str] = []
+        self.responses: list[str] = []
+        self.scope = None
+        self.target = None
+        self.closed = False
+        self.metadata: dict[str, Any] = {
+            "schema_version": 1,
+            "run_id": self.run.name,
+            "kind": "measured_password_interactive",
+            "state": "running",
+            "started_at": _now(),
+            "evidence_origin": "measured",
+            "evidence_purpose": "teaching",
+            "measurement_scope": f"interactive CW-Lite password traces on {target_identification}",
+            "claim_scope": "cell-by-cell traces for the bundled early-exit password comparison",
+            "target_identity": {
+                "platform": platform_name,
+                "user_identification": target_identification,
+                "software_verified_exact_board_variant": False,
+            },
+            "firmware": {
+                "path": str(self.firmware),
+                "sha256": _sha256(self.firmware),
+                "ss_ver": "SS_VER_1_0",
+            },
+            "program_firmware": program_firmware,
+            "host": {
+                "python": platform.python_version(),
+                "platform": platform.platform(),
+                "chipwhisperer": cw.__version__,
+            },
+        }
+        _write_json(self.metadata_path, self.metadata)
+        try:
+            device = _select_device(cw, serial_number)
+            self.scope = cw.scope(sn=device["sn"])
+            self.scope.default_setup()
+            self.scope.adc.samples = samples
+            self.scope.gain.db = gain_db
+            self.metadata["measurement_setup"] = _scope_snapshot(self.scope, device, samples=samples)
+            if not self.scope.clock.clkgen_locked:
+                raise RuntimeError("CW-Lite clock generator is not locked")
+            if program_firmware:
+                _program(self.scope, cw, self.firmware, self.attempts_path, platform_name)
+            else:
+                _append_attempt(self.attempts_path, {
+                    "kind": "programming",
+                    "at": _now(),
+                    "status": "skipped",
+                    "reason": "preloaded firmware required",
+                    "firmware_sha256": _sha256(self.firmware),
+                    "platform": platform_name,
+                })
+            self.target = cw.target(self.scope, cw.targets.SimpleSerial)
+            _write_json(self.metadata_path, self.metadata)
+        except Exception as error:
+            self.metadata.update({"state": "failed", "finished_at": _now(), "error": repr(error)})
+            _write_json(self.metadata_path, self.metadata)
+            self._disconnect()
+            raise
+
+    def capture(self, guess: str) -> np.ndarray:
+        """한 추측을 측정하고 원시 파형·UART 응답·시도 기록을 저장한다."""
+
+        if self.closed:
+            raise RuntimeError("capture session is already closed")
+        index = len(self.traces)
+        try:
+            wave, boot_output, response = _password_capture(
+                self.scope,
+                self.target,
+                guess,
+                self.samples,
+                minimum_peak_to_peak=50.0,
+            )
+            if "Safe-o-matic 3000" not in boot_output:
+                raise RuntimeError("expected password firmware boot banner was not observed")
+        except Exception as error:
+            _append_attempt(self.attempts_path, {
+                "kind": "interactive_capture",
+                "index": index,
+                "guess_hex": guess.encode().hex(),
+                "at": _now(),
+                "status": "rejected",
+                "reason": repr(error),
+            })
+            self.metadata.update({"state": "failed", "finished_at": _now(), "error": repr(error)})
+            _write_json(self.metadata_path, self.metadata)
+            self._disconnect()
+            raise
+
+        _append_attempt(self.attempts_path, {
+            "kind": "interactive_capture",
+            "index": index,
+            "guess_hex": guess.encode().hex(),
+            "at": _now(),
+            "status": "accepted",
+            "samples": wave.size,
+            "response": response[:160],
+            "minimum": float(wave.min()),
+            "maximum": float(wave.max()),
+            "peak_to_peak": float(np.ptp(wave)),
+        })
+        self.traces.append(wave)
+        self.guesses.append(guess)
+        self.responses.append(response)
+        self._persist("running")
+        return wave
+
+    def finish(self) -> Path:
+        """run을 완료 상태로 저장하고 scope와 target 연결을 닫는다."""
+
+        if not self.closed:
+            self._persist("complete")
+            self._disconnect()
+        return self.run
+
+    def _persist(self, state: str) -> None:
+        arrays: dict[str, Any] = {
+            "traces": np.stack(self.traces) if self.traces else np.empty((0, self.samples), dtype=np.float32),
+            "guesses": np.asarray(self.guesses),
+            "responses": np.asarray(self.responses),
+        }
+        if self.scope is not None:
+            arrays["sample_rate_hz"] = np.array(self.scope.clock.adc_freq)
+        np.savez_compressed(self.run / "traces.npz", **arrays)
+        self.metadata.update({
+            "state": state,
+            "accepted_trace_count": len(self.traces),
+            "raw_artifact": "traces.npz",
+        })
+        if state == "complete":
+            self.metadata["finished_at"] = _now()
+        _write_json(self.metadata_path, self.metadata)
+
+    def _disconnect(self) -> None:
+        if self.target is not None:
+            self.target.dis()
+            self.target = None
+        if self.scope is not None:
+            self.scope.dis()
+            self.scope = None
+        self.closed = True
+
+
 def capture_password_run(
     firmware_hex: str | Path,
     *,

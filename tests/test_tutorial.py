@@ -7,7 +7,7 @@ import numpy as np
 
 from cw_sca_tutorial.analysis import cpa_correlations, dpa_differences, recover_key_cpa, welch_t_test
 from cw_sca_tutorial.demo import repository_root
-from cw_sca_tutorial.hardware import _trace_output, _trace_wave, capture_aes_run, capture_password_run, validate_waveform
+from cw_sca_tutorial.hardware import PasswordCaptureSession, _trace_output, _trace_wave, capture_aes_run, capture_password_run, validate_waveform
 from cw_sca_tutorial.synthetic import AES_KEY, PASSWORD_ALPHABET, make_aes_dataset, make_tvla_dataset, password_candidate_batch
 
 
@@ -19,6 +19,7 @@ class TutorialAnalysisTests(unittest.TestCase):
     def test_capture_functions_program_firmware_by_default(self) -> None:
         self.assertIs(inspect.signature(capture_password_run).parameters["program_firmware"].default, True)
         self.assertIs(inspect.signature(capture_aes_run).parameters["program_firmware"].default, True)
+        self.assertIs(inspect.signature(PasswordCaptureSession).parameters["program_firmware"].default, False)
 
     def test_password_sad_recovers_all_characters(self) -> None:
         prefix = ""

@@ -51,12 +51,16 @@ CW-Lite가 정확히 한 대 연결되어 있어야 합니다. prebuilt 비밀�
             """),
             code("""
 import hashlib
+import importlib
 import json
 
 import chipwhisperer as cw
 
 from cw_sca_tutorial.demo import repository_root
-from cw_sca_tutorial.hardware import diagnose_password_signal
+import cw_sca_tutorial.hardware as hardware
+
+hardware = importlib.reload(hardware)
+diagnose_password_signal = hardware.diagnose_password_signal
 
 ROOT = repository_root()
 devices = cw.list_devices()
@@ -119,12 +123,16 @@ CW-Lite USB, 20-pin cable, target 전원, `MEASURE` SMA와 shunt 경로를 차�
             """),
             code("""
 import chipwhisperer as cw
+import importlib
 import json
 import matplotlib.pyplot as plt
 import numpy as np
 
 from cw_sca_tutorial.demo import repository_root
-from cw_sca_tutorial.hardware import capture_password_run
+import cw_sca_tutorial.hardware as hardware
+
+hardware = importlib.reload(hardware)
+capture_password_run = hardware.capture_password_run
 
 ROOT = repository_root()
 devices = cw.list_devices()
@@ -341,10 +349,14 @@ AES 키는 고정한 채 평문이 항상 같은 그룹 100개와 매번 달라�
             """),
             code("""
 import chipwhisperer as cw
+import importlib
 import json
 
 from cw_sca_tutorial.demo import repository_root
-from cw_sca_tutorial.hardware import capture_aes_run
+import cw_sca_tutorial.hardware as hardware
+
+hardware = importlib.reload(hardware)
+capture_aes_run = hardware.capture_aes_run
 
 ROOT = repository_root()
 devices = cw.list_devices()
@@ -447,13 +459,17 @@ $$Z = SBox[P \oplus K]$$
             """),
             code("""
 import chipwhisperer as cw
+import importlib
 import json
 import matplotlib.pyplot as plt
 import numpy as np
 
 from cw_sca_tutorial.analysis import cpa_correlations, dpa_differences, recover_key_cpa
 from cw_sca_tutorial.demo import repository_root
-from cw_sca_tutorial.hardware import capture_aes_run
+import cw_sca_tutorial.hardware as hardware
+
+hardware = importlib.reload(hardware)
+capture_aes_run = hardware.capture_aes_run
 
 ROOT = repository_root()
 devices = cw.list_devices()

@@ -219,10 +219,10 @@ print("Ready: one reference + 36 candidates per position")
             md("""
 ## 비밀번호 전체 복구
 
-이 셀 하나가 다섯 위치를 순서대로 공격합니다. 위치 하나의 캡처가 끝날 때마다 현재 후보 점수, 누적 heatmap, 복구된 접두사가 함께 갱신됩니다.
+이 셀 하나가 다섯 위치를 순서대로 공격합니다. 위치 하나의 캡처가 끝날 때마다 현재 후보 점수, 누적 heatmap, 복구된 접두사가 아래에 하나씩 쌓입니다.
             """),
             code("""
-from IPython.display import clear_output, display
+from IPython.display import display
 import time
 
 prefixes = []
@@ -262,7 +262,6 @@ try:
         axes[2].text(.5, .88, "Recovered", ha="center", fontsize=14)
         axes[2].text(.5, .72, prefix, ha="center", fontsize=30, weight="bold", color="#e45756")
         axes[2].text(.5, .48, "\\n".join(prefixes), ha="center", va="top", fontsize=15, family="monospace")
-        clear_output(wait=True)
         display(fig)
         plt.close(fig)
         if position < 4:

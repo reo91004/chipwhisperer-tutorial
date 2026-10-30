@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import inspect
 import os
 from pathlib import Path
@@ -47,6 +48,89 @@ class TutorialAnalysisTests(unittest.TestCase):
         self.assertIn("60-chipwhisperer-tutorial.rules", scripts["linux"].read_text(encoding="utf-8"))
         self.assertIn("WinUSB", scripts["windows"].read_text(encoding="utf-8"))
         self.assertIn('"chipwhisperer==7.0.0"', (root / "pyproject.toml").read_text(encoding="utf-8"))
+
+    def test_official_setup_scripts_clone_recursive_f303_environment(self) -> None:
+        root = repository_root()
+        scripts = {
+            "linux": root / "setup_official_linux.sh",
+            "macos": root / "setup_official_macos.sh",
+            "windows": root / "setup_official_windows.ps1",
+        }
+        required = (
+            "c47aefe0d3083b5fc7392ab0698aa7446c633dd4",
+            "dee4ddd71fa534457b97df6880ad4fecbc77bb94",
+            "--recursive",
+            "jupyter",
+            "requirements.txt",
+            "CWLITEARM",
+            "SS_VER_2_1",
+            "prepare_official_f303.py",
+            "chipwhisperer-official-f303",
+        )
+        for platform_name, path in scripts.items():
+            self.assertTrue(path.is_file(), platform_name)
+            text = path.read_text(encoding="utf-8")
+            for marker in required:
+                self.assertIn(marker, text, f"{platform_name}: {marker}")
+        self.assertTrue(os.access(scripts["linux"], os.X_OK))
+        self.assertTrue(os.access(scripts["macos"], os.X_OK))
+        self.assertIn("gcc-arm-none-eabi", scripts["linux"].read_text(encoding="utf-8"))
+        self.assertIn("arm-none-eabi-gcc", scripts["macos"].read_text(encoding="utf-8"))
+        self.assertIn("Arm.GnuArmEmbeddedToolchain", scripts["windows"].read_text(encoding="utf-8"))
+
+    def test_official_f303_notebook_copy_preserves_existing_work(self) -> None:
+        root = repository_root()
+        helper_path = root / "scripts" / "prepare_official_f303.py"
+        spec = importlib.util.spec_from_file_location("prepare_official_f303", helper_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory() as directory:
+            official_root = Path(directory)
+            course_dir = official_root / "jupyter" / "courses" / "sca101"
+            course_dir.mkdir(parents=True)
+            source = {
+                "cells": [
+                    {
+                        "cell_type": "code",
+                        "execution_count": 3,
+                        "outputs": [{"output_type": "stream", "name": "stdout", "text": ["old\n"]}],
+                        "source": [
+                            'SCOPETYPE="OPENADC"\n',
+                            "PLATFORM='CWHUSKY'\n",
+                            "CRYPTO_TARGET='NONE'\n",
+                            "VERSION='HARDWARE'",
+                        ],
+                    }
+                ],
+                "metadata": {},
+                "nbformat": 4,
+                "nbformat_minor": 5,
+            }
+            (course_dir / module.SOURCE_NAME).write_text(json.dumps(source), encoding="utf-8")
+            output_path = module.prepare_notebook(official_root)
+            prepared = json.loads(output_path.read_text(encoding="utf-8"))
+            prepared_source = "".join(prepared["cells"][0]["source"])
+            self.assertEqual(prepared_source, module.CONFIG_SOURCE)
+            self.assertIn('SCOPETYPE = "OPENADC"', prepared_source)
+            self.assertIn('PLATFORM = "CWLITEARM"', prepared_source)
+            self.assertIn('SS_VER = "SS_VER_2_1"', prepared_source)
+            self.assertIn('VERSION = "HARDWARE"', prepared_source)
+            self.assertEqual(prepared["metadata"]["kernelspec"]["name"], module.KERNEL_NAME)
+            self.assertEqual(
+                prepared["metadata"]["kernelspec"]["display_name"],
+                module.KERNEL_DISPLAY_NAME,
+            )
+            self.assertIsNone(prepared["cells"][0]["execution_count"])
+            self.assertEqual(prepared["cells"][0]["outputs"], [])
+
+            prepared["metadata"]["user_marker"] = "keep"
+            output_path.write_text(json.dumps(prepared), encoding="utf-8")
+            module.prepare_notebook(official_root)
+            preserved = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(preserved["metadata"]["user_marker"], "keep")
 
     def test_capture_functions_program_firmware_by_default(self) -> None:
         self.assertIs(inspect.signature(capture_password_run).parameters["program_firmware"].default, True)

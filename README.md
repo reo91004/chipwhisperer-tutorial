@@ -62,6 +62,34 @@ Windows에서는 다음 명령을 사용합니다.
 
 검증 환경은 Python 3.11.3, ChipWhisperer 7.0.0, NumPy 2.4.3입니다.
 
+## 공식 ChipWhisperer Jupyter 설치
+
+아래 스크립트는 이 튜토리얼 대신 공식 ChipWhisperer 저장소를 `--recursive`로 `_workspace/official-chipwhisperer`에 clone합니다. 검증한 공식 커밋, Jupyter 서브모듈, Python 3.11 가상환경, ARM GCC, USB 권한을 준비하고 F303용 펌웨어 빌드까지 확인합니다.
+
+```bash
+# Linux
+./setup_official_linux.sh
+
+# macOS
+./setup_official_macos.sh
+```
+
+Windows PowerShell에서는 다음과 같이 실행합니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_official_windows.ps1
+```
+
+설치가 끝나면 공식 `jupyter/courses/sca101/`에 다음 F303/Lite용 복사본이 생성됩니다.
+
+```text
+SOLN_Lab 2_1B - Power Analysis for Password Bypass - CWLITEARM.ipynb
+```
+
+이 복사본은 `SCOPETYPE=OPENADC`, `PLATFORM=CWLITEARM`, `SS_VER=SS_VER_2_1`, `VERSION=HARDWARE`로 설정됩니다. 공식 원본 노트북은 수정하지 않습니다.
+노트북을 열면 커널이 `Python (Official ChipWhisperer, F303)`인지 확인한 뒤 위에서부터 실행합니다.
+설치 단계는 F303 펌웨어 빌드까지 확인합니다. 실제 CW-Lite 탐색, F303 프로그래밍, 전력 파형 캡처는 보드를 연결한 뒤 노트북을 실행할 때 수행됩니다.
+
 ## 연결과 gain
 
 권장 target은 STM32F303이며 플랫폼 이름은 `CWLITEARM`입니다.

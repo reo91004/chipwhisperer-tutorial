@@ -90,6 +90,8 @@ SOLN_Lab 2_1B - Power Analysis for Password Bypass - CWLITEARM.ipynb
 노트북을 열면 커널이 `Python (Official ChipWhisperer, F303)`인지 확인한 뒤 위에서부터 실행합니다.
 설치 단계는 F303 펌웨어 빌드까지 확인합니다. 실제 CW-Lite 탐색, F303 프로그래밍, 전력 파형 캡처는 보드를 연결한 뒤 노트북을 실행할 때 수행됩니다.
 
+수동 설정과 문제 해결은 [F303_SETUP_GUIDE.md](F303_SETUP_GUIDE.md)에 정리했습니다.
+
 ## 연결과 gain
 
 권장 target은 STM32F303이며 플랫폼 이름은 `CWLITEARM`입니다.

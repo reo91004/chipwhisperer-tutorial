@@ -17,15 +17,48 @@ STM32F303과 ChipWhisperer-Lite에서 매번 새로 측정한 전력 파형으�
 
 ## 설치
 
-Python 3.10 이상을 사용합니다.
+운영체제에 맞는 스크립트를 저장소 루트에서 실행합니다. 스크립트는 Python 3.11 기반 `.venv` 생성, 검증된 ChipWhisperer 7.0.0 소스 커밋과 Python 패키지 설치, Jupyter 커널 등록, 번들 펌웨어 확인, 비하드웨어 테스트까지 수행합니다. 패키지 다운로드를 위한 인터넷 연결이 필요하며 Linux에서는 `sudo` 암호를 입력합니다.
+
+### Linux
 
 ```bash
-python3 -m venv .venv
+chmod +x setup_linux.sh
+./setup_linux.sh
+```
+
+처음 실행한 뒤에는 USB 그룹 권한을 적용하기 위해 로그아웃 후 다시 로그인하고 ChipWhisperer를 재연결합니다.
+
+### macOS
+
+Homebrew가 필요합니다.
+
+```bash
+chmod +x setup_macos.sh
+./setup_macos.sh
+```
+
+### Windows
+
+PowerShell에서 실행합니다. Python 3.11이 없고 `winget`을 사용할 수 있으면 스크립트가 설치합니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_windows.ps1
+```
+
+설치 후 Jupyter를 시작합니다.
+
+```bash
 source .venv/bin/activate
-python -m pip install -e .
-python scripts/make_notebooks.py
 jupyter lab
 ```
+
+Windows에서는 다음 명령을 사용합니다.
+
+```powershell
+.\.venv\Scripts\jupyter-lab.exe
+```
+
+실습은 저장소에 포함된 prebuilt HEX를 사용하므로 ARM 펌웨어 컴파일러는 설치하지 않습니다. 펌웨어 소스를 다시 빌드할 때만 별도의 ARM GCC 도구 모음이 필요합니다.
 
 검증 환경은 Python 3.11.3, ChipWhisperer 7.0.0, NumPy 2.4.3입니다.
 

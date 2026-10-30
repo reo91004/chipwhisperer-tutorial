@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import inspect
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -19,6 +20,33 @@ class TutorialAnalysisTests(unittest.TestCase):
     def test_repository_root_finds_prebuilt_firmware(self) -> None:
         root = repository_root()
         self.assertTrue((root / "firmware" / "prebuilt" / "basic-passwdcheck-CWLITEARM.hex").is_file())
+
+    def test_setup_scripts_cover_supported_platforms(self) -> None:
+        root = repository_root()
+        scripts = {
+            "linux": root / "setup_linux.sh",
+            "macos": root / "setup_macos.sh",
+            "windows": root / "setup_windows.ps1",
+        }
+        required = (
+            ".venv",
+            "--editable",
+            "ipykernel",
+            "unittest",
+            "c47aefe0d3083b5fc7392ab0698aa7446c633dd4",
+            "basic-passwdcheck-CWLITEARM.hex",
+            "simpleserial-aes-CWLITEARM.hex",
+        )
+        for platform_name, path in scripts.items():
+            self.assertTrue(path.is_file(), platform_name)
+            text = path.read_text(encoding="utf-8")
+            for marker in required:
+                self.assertIn(marker, text, f"{platform_name}: {marker}")
+        self.assertTrue(os.access(scripts["linux"], os.X_OK))
+        self.assertTrue(os.access(scripts["macos"], os.X_OK))
+        self.assertIn("60-chipwhisperer-tutorial.rules", scripts["linux"].read_text(encoding="utf-8"))
+        self.assertIn("WinUSB", scripts["windows"].read_text(encoding="utf-8"))
+        self.assertIn('"chipwhisperer==7.0.0"', (root / "pyproject.toml").read_text(encoding="utf-8"))
 
     def test_capture_functions_program_firmware_by_default(self) -> None:
         self.assertIs(inspect.signature(capture_password_run).parameters["program_firmware"].default, True)

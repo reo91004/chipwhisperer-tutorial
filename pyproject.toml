@@ -7,10 +7,10 @@ name = "chipwhisperer-undergrad-tutorial"
 version = "0.1.0"
 description = "시각적으로 배우는 ChipWhisperer 부채널 분석 실습"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11,<3.12"
 license = {text = "GPL-3.0-or-later"}
 dependencies = [
-  "chipwhisperer>=7,<8",
+  "chipwhisperer==7.0.0",
   "ipykernel>=6",
   "jupyterlab>=4",
   "matplotlib>=3.8",
